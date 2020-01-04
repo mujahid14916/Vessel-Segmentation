@@ -32,7 +32,7 @@ if not os.path.isdir(label_2_dir):
 
 # CHASE DB
 # ------------------------------------------------------------------------------------------------
-ChaseDB_dir_path = 'Dataset/CHASE_DB1/CHASEDB1/'
+ChaseDB_dir_path = 'Dataset/CHASEDB1/'
 chase_files_labels = glob(ChaseDB_dir_path + '*.png')
 chase_files_input = glob(ChaseDB_dir_path + '*.jpg')
 
@@ -69,8 +69,8 @@ for i, file in enumerate(stare_files, 1):
 
 # DRIVE
 # ------------------------------------------------------------------------------------------------
-drive_training_dir = 'DRIVE/training/images/'
-drive_training_label_dir = 'DRIVE/training/1st_manual/'
+drive_training_dir = 'Dataset/DRIVE/training/images/'
+drive_training_label_dir = 'Dataset/DRIVE/training/1st_manual/'
 drive_training_files = glob(drive_training_dir + '*.tif')
 
 k = 1
@@ -83,9 +83,9 @@ for i, file in enumerate(drive_training_files, k):
     label_1.convert('L').save(label_1_dir + '/DRIVE_{:02d}.png'.format(i))
     k += 1
 # ------------------------------------------------------------------------------------------------
-drive_test_dir = 'DRIVE/test/images/'
-drive_test_label_1_dir = 'DRIVE/test/1st_manual/'
-drive_test_label_2_dir = 'DRIVE/test/2nd_manual/'
+drive_test_dir = 'Dataset/DRIVE/test/images/'
+drive_test_label_1_dir = 'Dataset/DRIVE/test/1st_manual/'
+drive_test_label_2_dir = 'Dataset/DRIVE/test/2nd_manual/'
 drive_test_files = glob(drive_test_dir + '*.tif')
 
 for i, file in enumerate(drive_test_files, k):
