@@ -25,9 +25,9 @@ def data_generator(dataset_root_dir, image_dir, label_dir, image_ext, batch_size
         img = np.asarray(Image.open(file))
         lbl = np.asarray(Image.open(file.replace(image_dir, label_dir)))
         if np.max(img) > 1:
-            data_img = img / 255
+            data_img = np.array(img / 255, dtype=np.float32)
         if np.max(lbl) > 1:
-            data_lbl = lbl / 255
+            data_lbl = np.array(lbl / 255, dtype=np.float32)
         images.append(data_img)
         labels.append(data_lbl)
 
@@ -38,9 +38,9 @@ def data_generator(dataset_root_dir, image_dir, label_dir, image_ext, batch_size
             data_img = cv2.resize(img, (img_width, img_height))     # OpenCV (width, height) format
             data_lbl = cv2.resize(lbl, (img_width, img_height))
             if np.max(data_img) > 1:
-                data_img = data_img / 255
+                data_img = np.array(data_img / 255, dtype=np.float32)
             if np.max(data_lbl) > 1:
-                data_lbl = data_lbl / 255
+                data_lbl = np.array(data_lbl / 255, dtype=np.float32)
             images.append(data_img)
             labels.append(data_lbl)
 
@@ -69,17 +69,17 @@ def data_generator(dataset_root_dir, image_dir, label_dir, image_ext, batch_size
                 patch_img = patch_img[::-1, :]
                 patch_lbl = patch_lbl[::-1, :]
             # Can be ignored
-            if np.sum(patch_lbl) == 0:
+            if np.sum(patch_lbl) == 0 and np.random.randint(0, 100) > 0:    # 1% chance of selecting all negative sample
                 # print("Skipped, k =", k)
-                # Image.fromarray(patch_img).save(RESULT_DIR + '/SKIPPED_{}_1.png'.format(k))
-                # Image.fromarray(patch_lbl).save(RESULT_DIR + '/SKIPPED_{}_2.png'.format(k))
+                # Image.fromarray(np.array(patch_img * 255, dtype=np.uint8)).save(RESULT_DIR + '/SKIPPED_{}_1.png'.format(k))
+                # Image.fromarray(np.array(patch_lbl * 255, dtype=np.uint8)).save(RESULT_DIR + '/SKIPPED_{}_2.png'.format(k))
                 continue
             X.append(np.expand_dims(patch_img, axis=-1))
             Y.append(np.expand_dims(patch_lbl, axis=-1))
-            # Image.fromarray(patch_img).save(RESULT_DIR + '/{:08d}_1.png'.format(k))
-            # Image.fromarray(patch_lbl).save(RESULT_DIR + '/{:08d}_2.png'.format(k))
-            b += 1
+            # Image.fromarray(np.array(patch_img * 255, dtype=np.uint8)).save(RESULT_DIR + '/{:08d}_1.png'.format(k))
+            # Image.fromarray(np.array(patch_lbl * 255, dtype=np.uint8)).save(RESULT_DIR + '/{:08d}_2.png'.format(k))
             # k += 1
+            b += 1
         yield np.array(X), np.array(Y)
     #     pbar.update()
     #     if k >= TOTAL_PATCHES:
@@ -89,7 +89,7 @@ def data_generator(dataset_root_dir, image_dir, label_dir, image_ext, batch_size
 
 def main():
     x = 0
-    total = 1000000
+    total = 10
     pbar = tqdm(total=total, desc='Progress')
     for data in data_generator('training_dataset', 'pre-processed', 'label-1', 'png', 32):
         x += 1
