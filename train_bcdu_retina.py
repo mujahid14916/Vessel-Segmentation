@@ -5,11 +5,12 @@ Created on Sat Jun  8 18:15:43 2019
 @author: Reza winchester
 """
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import BCDU.models as M
 import numpy as np
 from keras.callbacks import ModelCheckpoint, TensorBoard,ReduceLROnPlateau
 from keras import callbacks
+from time import time
+import pickle
 from gen_data import data_generator
 
 
@@ -42,12 +43,15 @@ model.summary()
 mcp_save = ModelCheckpoint(WEIGHT_FILE_NAME, monitor='val_loss', mode='min')
 reduce_lr_loss = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=7, verbose=1, epsilon=1e-4, mode='min')
 
-model.fit_generator(data_generator('training_dataset', 
-                                   'pre-processed', 
-                                   'label-1', 'png', 
-                                   batch_size=BATCH_SIZE, 
-                                   patch_size=PATCH_SIZE),
-                    steps_per_epoch=TOTAL_BATCHES,
-                    epochs=EPOCHS,
-                    validation_data=[X_val, Y_val],
-                    callbacks=[mcp_save, reduce_lr_loss])
+history = model.fit_generator(data_generator('training_dataset', 
+                                             'pre-processed', 
+                                             'label-1', 'png', 
+                                             batch_size=BATCH_SIZE, 
+                                             patch_size=PATCH_SIZE),
+                              steps_per_epoch=TOTAL_BATCHES,
+                              epochs=EPOCHS,
+                              validation_data=[X_val, Y_val],
+                              callbacks=[mcp_save, reduce_lr_loss])
+
+with open('training_history/bcdu_{}.out'.format(time()), 'wb') as f:
+    pickle.dump(history, f)
