@@ -16,10 +16,10 @@ from gen_data import data_generator
 
 PATCH_SIZE = (64, 64)
 BATCH_SIZE = 64
-TOTAL_BATCHES = 1000
-TOTAL_VAL_DATA_BATCHES = 100
-WEIGHT_FILE_NAME = 'bcdu_weight_lstm.hdf5'
-EPOCHS = 10
+TOTAL_BATCHES = 10000
+TOTAL_VAL_DATA_BATCHES = 1000
+WEIGHT_FILE_NAME = 'models/bcdu_weight_lstm.hdf5'
+EPOCHS = 5
 
 val_gen = data_generator('testing_dataset', 'pre-processed', 'label-1', 'png', batch_size=BATCH_SIZE, patch_size=PATCH_SIZE)
 X_val = None
@@ -40,7 +40,7 @@ model.summary()
 
 
 # mcp_save = ModelCheckpoint('weight_lstm.hdf5', save_best_only=True, monitor='val_loss', mode='min')
-mcp_save = ModelCheckpoint(WEIGHT_FILE_NAME, monitor='val_loss', mode='min')
+mcp_save = ModelCheckpoint('models/bcdu_weight-{epoch:02d}-{val_acc:.2f}.hdf5', monitor='val_loss', mode='min')
 reduce_lr_loss = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=7, verbose=1, epsilon=1e-4, mode='min')
 
 history = model.fit_generator(data_generator('training_dataset', 
