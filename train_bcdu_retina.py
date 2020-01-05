@@ -33,7 +33,7 @@ for i in range(TOTAL_VAL_DATA_BATCHES):
         Y_val = np.concatenate([Y_val, y], axis=0)
 
 #model = M.unet2_segment(input_size = (64,64,1))
-model = M.BCDU_net_D3(input_size = (64,64,1))
+model = M.BCDU_net_D3(input_size = (*PATCH_SIZE, 1))
 if os.path.isfile(WEIGHT_FILE_NAME):
     model.load_weights(WEIGHT_FILE_NAME)
 model.summary()
