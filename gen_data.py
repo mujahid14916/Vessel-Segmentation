@@ -40,7 +40,7 @@ def data_generator(dataset_root_dir, image_dir, label_dir, image_ext, batch_size
         Y = []
         b = 0
         while b < batch_size:
-            index = np.random.randint(len(files))
+            index = np.random.randint(len(images))
             image = images[index]
             img_shp = image.shape
             label = labels[index]
@@ -76,11 +76,16 @@ def data_generator(dataset_root_dir, image_dir, label_dir, image_ext, batch_size
     #         break
     # pbar.close()
 
-x = 0
-total = 1000000
-pbar = tqdm(total=total, desc='Progress')
-for data in data_generator('training_dataset', 'pre-processed', 'label-1', 'png', 32):
-    x += 1
-    pbar.update()
-    if x > total:
-        break
+
+def main():
+    x = 0
+    total = 1000000
+    pbar = tqdm(total=total, desc='Progress')
+    for data in data_generator('training_dataset', 'pre-processed', 'label-1', 'png', 32):
+        x += 1
+        pbar.update()
+        if x > total:
+            break
+
+if __name__ == '__main__':
+    main()
