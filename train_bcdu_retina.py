@@ -48,7 +48,8 @@ history = model.fit_generator(data_generator('training_dataset',
                                                              batch_size=BATCH_SIZE, 
                                                              patch_size=PATCH_SIZE),
                               validation_steps=TOTAL_VAL_DATA_BATCHES,
-                              callbacks=[mcp_save, reduce_lr_loss])
+                              callbacks=[mcp_save, reduce_lr_loss],
+                              class_weight=[1, 5])  # TODO: Check Class weights
 
 with open('training_history/bcdu_{}.out'.format(time()), 'wb') as f:
     pickle.dump(history, f)
