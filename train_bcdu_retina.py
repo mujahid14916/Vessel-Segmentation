@@ -15,10 +15,10 @@ from gen_data import data_generator
 
 PATCH_SIZE = (64, 64)
 BATCH_SIZE = 64
-TOTAL_BATCHES = 5
-TOTAL_VAL_DATA_BATCHES = 5
+TOTAL_BATCHES = 1000
+TOTAL_VAL_DATA_BATCHES = 100
 WEIGHT_FILE_NAME = 'bcdu_weight_lstm.hdf5'
-EPOCHS = 1
+EPOCHS = 10
 
 val_gen = data_generator('testing_dataset', 'pre-processed', 'label-1', 'png', batch_size=BATCH_SIZE, patch_size=PATCH_SIZE)
 X_val = None

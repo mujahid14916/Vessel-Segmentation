@@ -24,15 +24,25 @@ def data_generator(dataset_root_dir, image_dir, label_dir, image_ext, batch_size
     for file in files:
         img = np.asarray(Image.open(file))
         lbl = np.asarray(Image.open(file.replace(image_dir, label_dir)))
-        images.append(img)
-        labels.append(lbl)
+        if np.max(img) > 1:
+            data_img = img / 255
+        if np.max(lbl) > 1:
+            data_lbl = lbl / 255
+        images.append(data_img)
+        labels.append(data_lbl)
 
         # Append Scaled Images
         for _ in range(5):
             img_height = np.random.randint(low=image_min_max_hgt[0], high=image_min_max_hgt[1]+1)
             img_width = int(img.shape[1] / img.shape[0] * img_height)   # original_width / original_height * height
-            images.append(cv2.resize(img, (img_width, img_height)))     # OpenCV (width, height) format
-            labels.append(cv2.resize(lbl, (img_width, img_height)))
+            data_img = cv2.resize(img, (img_width, img_height))     # OpenCV (width, height) format
+            data_lbl = cv2.resize(lbl, (img_width, img_height))
+            if np.max(data_img) > 1:
+                data_img = data_img / 255
+            if np.max(data_lbl) > 1:
+                data_lbl = data_lbl / 255
+            images.append(data_img)
+            labels.append(data_lbl)
 
     # pbar = tqdm(total=TOTAL_PATCHES, desc='Patch Progress')
     while True:
