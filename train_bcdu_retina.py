@@ -52,4 +52,7 @@ history = model.fit_generator(data_generator('training_dataset',
                               class_weight=[1, 5])  # TODO: Check Class weights
 
 with open('training_history/bcdu_{}.out'.format(time()), 'wb') as f:
-    pickle.dump(history, f)
+    d = {}
+    d['epoch'] = history.epoch
+    d['history'] = history.history
+    pickle.dump(d, f)
