@@ -27,6 +27,8 @@ from SegCaps.model_helper import create_model
 
 from SegCaps.custom_losses import dice_hard, weighted_binary_crossentropy_loss, dice_loss, margin_loss
 from gen_data import data_generator
+import pickle
+from time import time
 
 def get_loss(net, recon_wei, choice):
     if choice == 'bce':
@@ -170,3 +172,9 @@ history = model.fit_generator(data_generator('training_dataset',
                             callbacks=[mcp_save])
 
 # print_summary(model=model_list[0], positions=[.38, .65, .75, 1.])
+
+with open('training_history/segcaps_{}.out'.format(time()), 'wb') as f:
+    d = {}
+    d['epoch'] = history.epoch
+    d['history'] = history.history
+    pickle.dump(d, f)
