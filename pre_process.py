@@ -79,7 +79,6 @@ def pre_process_image(image):
     clache = clahe_equalized(normalized)
     gamma = adjust_gamma(clache, 1.2)
     out = np.einsum('klij->kijl', gamma)[0]
-    out = np.repeat(out, repeats=[3], axis=-1)
     return out
 
 
@@ -92,6 +91,7 @@ def main():
         file, image = input_files[i], images[i]
         image_name = ''.join(file.replace('\\', '/').split('/')[-1].split('.')[:-1])
         out = np.array(pre_process_image(image), dtype=np.uint8)
+        out = np.repeat(out, repeats=[3], axis=-1)
         # cv2.imwrite(result_dir + image_name + '.png', out)
         Image.fromarray(out).convert('L').save(result_dir + image_name + '.png')
         processed.append(out)
