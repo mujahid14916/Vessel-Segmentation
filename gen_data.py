@@ -16,7 +16,7 @@ if not os.path.isdir(RESULT_DIR):
     os.mkdir(RESULT_DIR)
 
 
-def data_generator(dataset_root_dir, image_dir, label_dir, image_ext, batch_size, patch_size=(64, 64), image_min_max_hgt=(300, 600)):
+def data_generator(dataset_root_dir, image_dir, label_dir, image_ext, batch_size, patch_size=(64, 64), image_min_max_hgt=(300, 600), caps=False):
     k = 0
     files = glob('{}/{}/*.{}'.format(dataset_root_dir, image_dir, image_ext))
     images = []
@@ -80,7 +80,11 @@ def data_generator(dataset_root_dir, image_dir, label_dir, image_ext, batch_size
             # Image.fromarray(np.array(patch_lbl * 255, dtype=np.uint8)).save(RESULT_DIR + '/{:08d}_2.png'.format(k))
             # k += 1
             b += 1
-        yield np.array(X), np.array(Y)
+        if caps:
+            x, y = np.array(X), np.array(Y)
+            yield ([x, y], [y, y*x])
+        else:
+            yield np.array(X), np.array(Y)
     #     pbar.update()
     #     if k >= TOTAL_PATCHES:
     #         break

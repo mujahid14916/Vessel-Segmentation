@@ -108,8 +108,8 @@ def CapsNetR3(input_shape, n_class=2):
         return out_recon
 
     # Models for training and evaluation (prediction)
-    # train_model = models.Model(inputs=[x, y], outputs=[out_seg, shared_decoder(masked_by_y)])
-    train_model = models.Model(inputs=[x], outputs=[out_seg])
+    train_model = models.Model(inputs=[x, y], outputs=[out_seg, shared_decoder(masked_by_y)])
+    # train_model = models.Model(inputs=[x], outputs=[out_seg])
     eval_model = models.Model(inputs=x, outputs=[out_seg, shared_decoder(masked)])
 
     # manipulate model

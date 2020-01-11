@@ -154,12 +154,13 @@ model_list = create_model(net='segcapsr3', input_shape=net_input_shape)
 model_list[0].summary()
 model = compile_model(net_input_shape, model_list[0], net='segcaps')
 
-mcp_save = ModelCheckpoint('models/seg_weight-{epoch:02d}-{val_accuracy:.6f}.hdf5', monitor='val_loss', mode='min')
+mcp_save = ModelCheckpoint('models/seg_weight-{epoch:02d}-{val_out_seg_accuracy:.6f}.hdf5', monitor='val_loss', mode='min')
 history = model.fit_generator(data_generator('training_dataset', 
                                             'pre-processed', 
                                             'label-1', 'png', 
                                             batch_size=BATCH_SIZE, 
-                                            patch_size=PATCH_SIZE),
+                                            patch_size=PATCH_SIZE,
+                                            caps=True),
                             steps_per_epoch=TOTAL_BATCHES,
                             epochs=EPOCHS,
                             validation_data=data_generator('testing_dataset', 
@@ -167,7 +168,8 @@ history = model.fit_generator(data_generator('training_dataset',
                                                             'label-1', 
                                                             'png', 
                                                             batch_size=BATCH_SIZE, 
-                                                            patch_size=PATCH_SIZE),
+                                                            patch_size=PATCH_SIZE,
+                                                            caps=True),
                             validation_steps=TOTAL_VAL_DATA_BATCHES,
                             callbacks=[mcp_save])
 
