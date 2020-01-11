@@ -2,22 +2,21 @@ from glob import glob
 from pprint import pprint as pp
 from PIL import Image
 import numpy as np
-from extract_patches import get_data_testing_overlap
-from extract_patches import my_PreProc
-from extract_patches import extract_ordered_overlap
-from extract_patches import paint_border_overlap
-from extract_patches import recompone_overlap
-import models as M
+from pre_process import pre_process_image
+from pre_process import extract_ordered_overlap
+from pre_process import paint_border_overlap
+from pre_process import recompone_overlap
+import BCDU.models as M
 from matplotlib import pyplot as plt
 import os
 
 
-IMAGE_RESIZE_PER = 0.25         # Resize Percentage
+IMAGE_RESIZE_PER = 1         # Resize Percentage
 PATCH_SIZE = (64, 64)           # (height, width)
 STRIDE_SIZE = (50, 50)          # (height, width)
 IMG_SIZE = None
 
-DIR_NAME = 'neo'
+DIR_NAME = '../retcam'
 RESULT_DIR = DIR_NAME + '_result'
 
 file_names = glob(DIR_NAME + '/*.png')
@@ -26,7 +25,7 @@ if not os.path.isdir(RESULT_DIR):
 pp(file_names)
 
 model = M.BCDU_net_D3(input_size = (*PATCH_SIZE, 1))
-model.load_weights('weight_retina.hdf5')
+model.load_weights('models/bcdu_weight-05-0.867993.hdf5')
 
 for i, file_name in enumerate(file_names, 1):
     print('-'*80)
@@ -35,13 +34,11 @@ for i, file_name in enumerate(file_names, 1):
     if not IMG_SIZE:
         IMG_SIZE = (int(image.size[0] * IMAGE_RESIZE_PER), 
                     int(image.size[1] * IMAGE_RESIZE_PER))
-    image = np.asarray(
-            image.resize(IMG_SIZE)
-        ).transpose((2, 0, 1))
-    image = image[0:3, :, :]
+    image = np.asarray(image.resize(IMG_SIZE))
+    image = image[:, :, 0:3]
 
     print(image.shape)
-    image = my_PreProc(np.expand_dims(image, axis=0))
+    image = pre_process_image(image)
 
     #extend both images and masks so they can be divided exactly by the patches dimensions
     image = paint_border_overlap(image, *PATCH_SIZE, *STRIDE_SIZE)
@@ -66,7 +63,7 @@ for i, file_name in enumerate(file_names, 1):
     orinal_image = recompone_overlap(predictions, *new_size, *STRIDE_SIZE)
     print(orinal_image.shape)
     orinal_image = np.einsum('klij->kijl', orinal_image)
-    orinal_image = orinal_image[:, 0:IMG_SIZE[0], 0:IMG_SIZE[1], :]
+    orinal_image = orinal_image[:, 0:IMG_SIZE[1], 0:IMG_SIZE[0], :]
     image_name = ''.join(file_name.replace('\\', '/').split('/')[-1].split('.')[:-1])
     save_image_path = RESULT_DIR + '/' + image_name + '_' + str(PATCH_SIZE) + '_' + str(STRIDE_SIZE) + '.jpg'
     plt.imsave(save_image_path, np.repeat(orinal_image[0], 3, axis=-1))
