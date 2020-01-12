@@ -14,12 +14,12 @@ import pickle
 from gen_data import data_generator
 
 
-PATCH_SIZE = (256, 256)
-BATCH_SIZE = 4
+PATCH_SIZE = (128, 128)
+BATCH_SIZE = 16
 TOTAL_BATCHES = 10000
 TOTAL_VAL_DATA_BATCHES = 1000
-WEIGHT_FILE_NAME = 'models/bcdu_weight-15-0.867075.hdf5'
-EPOCHS = 20
+WEIGHT_FILE_NAME = 'models/bcdu_weight-20-0.866382.hdf5'
+EPOCHS = 25
 
 #model = M.unet2_segment(input_size = (64,64,1))
 print("Initializing Network")
@@ -49,7 +49,7 @@ history = model.fit_generator(data_generator('training_dataset',
                                                              patch_size=PATCH_SIZE),
                               validation_steps=TOTAL_VAL_DATA_BATCHES,
                               callbacks=[mcp_save, reduce_lr_loss],
-                              initial_epoch=15
+                              initial_epoch=20
                               )  # TODO: Check Class weights
 
 with open('training_history/bcdu_{}.out'.format(time()), 'wb') as f:

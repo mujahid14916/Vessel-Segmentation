@@ -2,5 +2,4 @@ __pycache__
 .ipynb_checkpoints
 training_dataset/patches/
 *.hdf5
-*.out
 .vscode
