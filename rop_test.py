@@ -68,7 +68,7 @@ for k, model_path in enumerate(models_path, 1):
         orinal_image = orinal_image[:, 0:IMG_SIZE[1], 0:IMG_SIZE[0], :]
         image_name = ''.join(file_name.replace('\\', '/').split('/')[-1].split('.')[:-1])
         save_image_path = RESULT_DIR + '/' + image_name + '_' + str(PATCH_SIZE) + '_' + str(STRIDE_SIZE) + \
-                          '_{}.jpg'.format(''.join(model_path.replace('\\', '/').split('/')[-1].split('-')[:2]))
+                          '_{}.jpg'.format('_'.join(model_path.replace('\\', '/').split('/')[-1].split('-')[:2]))
         plt.imsave(save_image_path, np.repeat(orinal_image[0], 3, axis=-1))
         print("Saving Image as", save_image_path)
         print()

@@ -18,8 +18,8 @@ PATCH_SIZE = (128, 128)
 BATCH_SIZE = 16
 TOTAL_BATCHES = 10000
 TOTAL_VAL_DATA_BATCHES = 1000
-WEIGHT_FILE_NAME = 'models/bcdu_weight-00-0.866382.hdf5'
-EPOCHS = 1
+WEIGHT_FILE_NAME = 'models/bcdu_weight_dice-06-0.920957.hdf5'
+EPOCHS = 15
 
 #model = M.unet2_segment(input_size = (64,64,1))
 print("Initializing Network")
@@ -31,7 +31,7 @@ model.summary()
 
 
 # mcp_save = ModelCheckpoint('weight_lstm.hdf5', save_best_only=True, monitor='val_loss', mode='min')
-mcp_save = ModelCheckpoint('models/bcdu_weight-dice-{epoch:02d}-{val_accuracy:.6f}.hdf5', monitor='val_loss', mode='min')
+mcp_save = ModelCheckpoint('models/bcdu_weight_dice-{epoch:02d}-{val_accuracy:.6f}.hdf5', monitor='val_loss', mode='min')
 reduce_lr_loss = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=7, verbose=1, epsilon=1e-4, mode='min')
 
 history = model.fit_generator(data_generator('training_dataset', 
@@ -49,10 +49,10 @@ history = model.fit_generator(data_generator('training_dataset',
                                                              patch_size=PATCH_SIZE),
                               validation_steps=TOTAL_VAL_DATA_BATCHES,
                               callbacks=[mcp_save, reduce_lr_loss],
-                              initial_epoch=0
+                              initial_epoch=6
                               )  # TODO: Check Class weights
 
-with open('training_history/bcdu_{}.out'.format(time()), 'wb') as f:
+with open('training_history/bcdu_dice{}.out'.format(time()), 'wb') as f:
     d = {}
     d['epoch'] = history.epoch
     d['history'] = history.history
