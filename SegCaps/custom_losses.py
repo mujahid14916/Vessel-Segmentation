@@ -131,7 +131,7 @@ def weighted_binary_crossentropy_loss(pos_weight):
             output = tf.clip_by_value(output, _epsilon, 1 - _epsilon)
             output = tf.math.log(output / (1 - output))
 
-        return tf.nn.weighted_cross_entropy_with_logits(targets=target,
+        return tf.nn.weighted_cross_entropy_with_logits(labels=target,
                                                        logits=output,
                                                         pos_weight=pos_weight)
     return weighted_binary_crossentropy

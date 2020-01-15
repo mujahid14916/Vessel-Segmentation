@@ -9,11 +9,21 @@ from tqdm import tqdm
 
 PATCH_SIZE = (256, 256)       # (height, width)
 TOTAL_PATCHES = 500
-IMG_MAX_HEIGHT = 600
-IMG_MIN_HEIGHT = 300
+# IMG_MAX_HEIGHT = 800
+# IMG_MIN_HEIGHT = 500
 RESULT_DIR = 'training_dataset/patches'
 if not os.path.isdir(RESULT_DIR):
     os.mkdir(RESULT_DIR)
+
+
+def add_sp_noise(img):  # Salt Pepper noise
+    max_val = 255
+    prob = np.random.randint(5, 150) / 1000
+    randn = np.random.randint(-int(max_val*prob), int(max_val*prob), size=(img.shape))
+    if np.max(img) <= 1:
+        randn = randn / 255
+        max_val = 1
+    return np.clip(img + randn, 0, max_val)
 
 
 def data_generator(dataset_root_dir, image_dir, label_dir, image_ext, batch_size, patch_size=(64, 64), image_min_max_hgt=(300, 600), caps=False):
@@ -32,19 +42,18 @@ def data_generator(dataset_root_dir, image_dir, label_dir, image_ext, batch_size
         labels.append(data_lbl)
 
         # Append Scaled Images
-        for _ in range(5):
-            img_height = np.random.randint(low=image_min_max_hgt[0], high=image_min_max_hgt[1]+1)
-            img_width = int(img.shape[1] / img.shape[0] * img_height)   # original_width / original_height * height
-            data_img = cv2.resize(img, (img_width, img_height))     # OpenCV (width, height) format
-            data_lbl = cv2.resize(lbl, (img_width, img_height))
-            if np.max(data_img) > 1:
-                data_img = np.array(data_img / 255, dtype=np.float32)
-            if np.max(data_lbl) > 1:
-                data_lbl = np.array(data_lbl / 255, dtype=np.float32)
-            images.append(data_img)
-            labels.append(data_lbl)
+        # for _ in range(5):
+        #     img_height = np.random.randint(low=image_min_max_hgt[0], high=image_min_max_hgt[1]+1)
+        #     img_width = int(img.shape[1] / img.shape[0] * img_height)   # original_width / original_height * height
+        #     data_img = cv2.resize(img, (img_width, img_height))     # OpenCV (width, height) format
+        #     data_lbl = cv2.resize(lbl, (img_width, img_height))
+        #     if np.max(data_img) > 1:
+        #         data_img = np.array(data_img / 255, dtype=np.float32)
+        #     if np.max(data_lbl) > 1:
+        #         data_lbl = np.array(data_lbl / 255, dtype=np.float32)
+        #     images.append(data_img)
+        #     labels.append(data_lbl)
 
-    # pbar = tqdm(total=TOTAL_PATCHES, desc='Patch Progress')
     while True:
         X = []
         Y = []
@@ -68,16 +77,27 @@ def data_generator(dataset_root_dir, image_dir, label_dir, image_ext, batch_size
             if np.random.randint(0, 1000) == 0:
                 patch_img = patch_img[::-1, :]
                 patch_lbl = patch_lbl[::-1, :]
+            # Patch Stretching
+            if np.random.randint(0, 100) == 0:
+                height_scale = 1 + np.random.rand()
+                width_scale = 1 + np.random.rand()
+                # Horizontal
+                if np.random.choice([True, False]):
+                    patch_img = cv2.resize(patch_img, (int(patch_size[1] * width_scale), patch_size[0]))
+                    patch_lbl = cv2.resize(patch_lbl, (int(patch_size[1] * width_scale), patch_size[0]))
+                # Vertical
+                if np.random.choice([True, False]):
+                    patch_img = cv2.resize(patch_img, (patch_size[1], int(patch_size[0] * height_scale)))
+                    patch_lbl = cv2.resize(patch_lbl, (patch_size[1], int(patch_size[0] * height_scale)))
+                patch_img = patch_img[:patch_size[0], :patch_size[1]]
+                patch_lbl = patch_lbl[:patch_size[0], :patch_size[1]]
+            if np.random.randint(0, 100) == 0:
+                patch_img = add_sp_noise(patch_img)
             # Can be ignored
             if np.sum(patch_lbl) == 0 and np.random.randint(0, 100) > 0:    # 1% chance of selecting all negative sample
-                # print("Skipped, k =", k)
-                # Image.fromarray(np.array(patch_img * 255, dtype=np.uint8)).save(RESULT_DIR + '/SKIPPED_{}_1.png'.format(k))
-                # Image.fromarray(np.array(patch_lbl * 255, dtype=np.uint8)).save(RESULT_DIR + '/SKIPPED_{}_2.png'.format(k))
                 continue
             X.append(np.expand_dims(patch_img, axis=-1))
             Y.append(np.expand_dims(patch_lbl, axis=-1))
-            # Image.fromarray(np.array(patch_img * 255, dtype=np.uint8)).save(RESULT_DIR + '/{:08d}_1.png'.format(k))
-            # Image.fromarray(np.array(patch_lbl * 255, dtype=np.uint8)).save(RESULT_DIR + '/{:08d}_2.png'.format(k))
             # k += 1
             b += 1
         if caps:
@@ -85,21 +105,27 @@ def data_generator(dataset_root_dir, image_dir, label_dir, image_ext, batch_size
             yield ([x, y], [y, y*x])
         else:
             yield np.array(X), np.array(Y)
-    #     pbar.update()
-    #     if k >= TOTAL_PATCHES:
-    #         break
-    # pbar.close()
 
 
 def main():
-    x = 0
-    total = 10
-    pbar = tqdm(total=total, desc='Progress')
-    for data in data_generator('training_dataset', 'pre-processed', 'label-1', 'png', 32):
-        x += 1
-        pbar.update()
-        if x > total:
+    current_batch = 0
+    total_batches = 10
+    batch_size = 32
+    patch_size = (128, 128)
+    pbar = tqdm(total=total_batches * batch_size, desc='Progress')
+    i = 0
+    for data in data_generator('training_dataset', 'pre-processed', 'label-1', 'png', batch_size, patch_size):
+        i = current_batch * batch_size
+        for X, Y in zip(data[0], data[1]):
+            Image.fromarray(np.array(X[:, :, 0] * 255, dtype=np.uint8)).save(RESULT_DIR + '/{:08d}_1.png'.format(i))
+            Image.fromarray(np.array(Y[:, :, 0] * 255, dtype=np.uint8)).save(RESULT_DIR + '/{:08d}_2.png'.format(i))
+            i += 1
+            pbar.update()
+        current_batch += 1
+        if current_batch >= total_batches:
             break
+    pbar.close()
+
 
 if __name__ == '__main__':
     main()
