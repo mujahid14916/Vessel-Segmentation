@@ -7,9 +7,41 @@ from keras import backend as K
 from keras.utils.vis_utils import plot_model as plot
 from keras.optimizers import SGD
 from keras.optimizers import *
-from keras.layers import *    
-from SegCaps.custom_losses import *    
+from keras.layers import *
 
+
+def dice_loss(y_true, y_pred):
+    numerator = 2 * tf.reduce_sum(y_true * y_pred, axis=(1,2,3))
+    denominator = tf.reduce_sum(y_true + y_pred, axis=(1,2,3))
+
+    return 1 - numerator / denominator
+
+
+def weighted_cross_entropy(beta):
+    def convert_to_logits(y_pred):
+        # see https://github.com/tensorflow/tensorflow/blob/r1.10/tensorflow/python/keras/backend.py#L3525
+        y_pred = tf.clip_by_value(y_pred, tf.keras.backend.epsilon(), 1 - tf.keras.backend.epsilon())
+
+        return tf.math.log(y_pred / (1 - y_pred))
+
+    def loss(y_true, y_pred):
+        y_pred = convert_to_logits(y_pred)
+        loss = tf.nn.weighted_cross_entropy_with_logits(logits=y_pred, labels=y_true, pos_weight=beta)
+
+        # or reduce_sum and/or axis=-1
+        return tf.reduce_mean(loss)
+
+    return loss
+
+
+def ce_with_dice(y_true, y_pred):
+    def dice_loss(y_true, y_pred):
+        numerator = 2 * tf.reduce_sum(y_true * y_pred, axis=(1,2,3))
+        denominator = tf.reduce_sum(y_true + y_pred, axis=(1,2,3))
+
+        return tf.reshape(1 - numerator / denominator, (-1, 1, 1))
+
+    return tf.nn.weighted_cross_entropy_with_logits(y_true, y_pred) + dice_loss(y_true, y_pred)
 
 
 def BCDU_net_D3(input_size = (256,256,1)):
@@ -77,7 +109,8 @@ def BCDU_net_D3(input_size = (256,256,1)):
     conv8 = Conv2D(2, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv8)
     conv9 = Conv2D(1, 1, activation = 'sigmoid')(conv8)
 
-    loss = weighted_binary_crossentropy_loss(pos_weight=1.5)
+    # loss = weighted_binary_crossentropy_loss(pos_weight=1.5)
+    loss = dice_loss
 
     model = Model(input = inputs, output = conv9)
     model.compile(optimizer = Adam(lr = 1e-4), loss = loss, metrics = ['accuracy'])
