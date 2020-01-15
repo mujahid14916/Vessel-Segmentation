@@ -2,21 +2,21 @@ from glob import glob
 from pprint import pprint as pp
 from PIL import Image
 import numpy as np
-from pre_process import pre_process_image
-from pre_process import extract_ordered_overlap
-from pre_process import paint_border_overlap
-from pre_process import recompone_overlap
+from gen_preprocess_data import pre_process_image
+from gen_preprocess_data import extract_ordered_overlap
+from gen_preprocess_data import paint_border_overlap
+from gen_preprocess_data import recompone_overlap
 import BCDU.models as M
 from matplotlib import pyplot as plt
 import os
 
 
-IMAGE_RESIZE_PER = 0.25         # Resize Percentage
+IMAGE_RESIZE_PER = 1         # Resize Percentage
 PATCH_SIZE = (128, 128)           # (height, width)
 STRIDE_SIZE = (64, 64)          # (height, width)
 IMG_SIZE = None
 
-DIR_NAME = '../neo'
+DIR_NAME = '../retcam'
 RESULT_DIR = DIR_NAME + '_result'
 
 file_names = glob(DIR_NAME + '/*.png')
@@ -67,7 +67,8 @@ for k, model_path in enumerate(models_path, 1):
         orinal_image = np.einsum('klij->kijl', orinal_image)
         orinal_image = orinal_image[:, 0:IMG_SIZE[1], 0:IMG_SIZE[0], :]
         image_name = ''.join(file_name.replace('\\', '/').split('/')[-1].split('.')[:-1])
-        save_image_path = RESULT_DIR + '/' + image_name + '_' + str(PATCH_SIZE) + '_' + str(STRIDE_SIZE) + '_{}.jpg'.format(model_path.split('-')[1])
+        save_image_path = RESULT_DIR + '/' + image_name + '_' + str(PATCH_SIZE) + '_' + str(STRIDE_SIZE) + \
+                          '_{}.jpg'.format(''.join(model_path.replace('\\', '/').split('/')[-1].split('-')[:2]))
         plt.imsave(save_image_path, np.repeat(orinal_image[0], 3, axis=-1))
         print("Saving Image as", save_image_path)
         print()

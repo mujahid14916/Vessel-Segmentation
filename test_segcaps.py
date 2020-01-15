@@ -3,7 +3,7 @@ from PIL import Image
 from SegCaps.model_helper import create_model
 from SegCaps.capsule_layers import *
 import os
-from pre_process import pre_process_image
+from gen_preprocess_data import pre_process_image
 from keras.models import load_model
 import numpy as np
 import h5py

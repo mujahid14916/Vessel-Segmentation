@@ -70,7 +70,6 @@ def pre_process_image(image, save_image=False):
     return gamma/255.
 
 
-
 def paint_border_overlap(full_imgs, patch_h, patch_w, stride_h, stride_w):
     assert (len(full_imgs.shape)==4)  #4D arrays
     assert (full_imgs.shape[1]==1 or full_imgs.shape[1]==3)  #check the channel is 1 or 3
@@ -168,6 +167,7 @@ def main():
         # cv2.imwrite(result_dir + image_name + '.png', out)
         Image.fromarray(out).convert('L').save(result_dir + image_name + '.png')
         processed.append(out)
+
 
 if __name__ == '__main__':
     main()
