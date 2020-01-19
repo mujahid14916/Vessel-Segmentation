@@ -1,178 +1,81 @@
 from glob import glob
+from pprint import pprint as pp
 from PIL import Image
-from SegCaps.model_helper import create_model
-from SegCaps.capsule_layers import *
-import os
-from gen_preprocess_data import pre_process_image
-from keras.models import load_model
 import numpy as np
-import h5py
-import cv2
-
-PATCH_SIZE = (64, 64)
-BATCH_SIZE = 64
-WEIGHT_FILE = 'models/bcdu_weight-05-0.867993.hdf5'
-
-NET_INPUT_SHAPE = (64, 64, 1)
-images_to_test = glob('training_dataset/input/*.jpg')
-
-# m = load_model(WEIGHT_FILE, {'ConvCapsuleLayer': ConvCapsuleLayer, 
-#                              'DeconvCapsuleLayer': DeconvCapsuleLayer,
-#                              'Length': Length,
-#                              'Mask': Mask})
-m = load_model(WEIGHT_FILE)
-m.summary()
-
-# train_model, eval_model, manup_model = create_model(net='segcapsr3', input_shape=NET_INPUT_SHAPE)
-# if os.path.isfile(WEIGHT_FILE):
-#     eval_model.load_weights(WEIGHT_FILE)
-# else:
-#     print("Model not found, Cannot Infer")
-#     exit()
-
-def paint_border_overlap(full_imgs, patch_h, patch_w, stride_h, stride_w):
-    assert (len(full_imgs.shape)==4)  #4D arrays
-    assert (full_imgs.shape[1]==1 or full_imgs.shape[1]==3)  #check the channel is 1 or 3
-    img_h = full_imgs.shape[2]  #height of the full image
-    img_w = full_imgs.shape[3] #width of the full image
-    leftover_h = (img_h-patch_h)%stride_h  #leftover on the h dim
-    leftover_w = (img_w-patch_w)%stride_w  #leftover on the w dim
-    if (leftover_h != 0):  #change dimension of img_h
-        print ("\nthe side H is not compatible with the selected stride of " +str(stride_h))
-        print ("img_h " +str(img_h) + ", patch_h " +str(patch_h) + ", stride_h " +str(stride_h))
-        print ("(img_h - patch_h) MOD stride_h: " +str(leftover_h))
-        print ("So the H dim will be padded with additional " +str(stride_h - leftover_h) + " pixels")
-        tmp_full_imgs = np.zeros((full_imgs.shape[0],full_imgs.shape[1],img_h+(stride_h-leftover_h),img_w))
-        tmp_full_imgs[0:full_imgs.shape[0],0:full_imgs.shape[1],0:img_h,0:img_w] = full_imgs
-        full_imgs = tmp_full_imgs
-    if (leftover_w != 0):   #change dimension of img_w
-        print ("the side W is not compatible with the selected stride of " +str(stride_w))
-        print ("img_w " +str(img_w) + ", patch_w " +str(patch_w) + ", stride_w " +str(stride_w))
-        print ("(img_w - patch_w) MOD stride_w: " +str(leftover_w))
-        print ("So the W dim will be padded with additional " +str(stride_w - leftover_w) + " pixels")
-        tmp_full_imgs = np.zeros((full_imgs.shape[0],full_imgs.shape[1],full_imgs.shape[2],img_w+(stride_w - leftover_w)))
-        tmp_full_imgs[0:full_imgs.shape[0],0:full_imgs.shape[1],0:full_imgs.shape[2],0:img_w] = full_imgs
-        full_imgs = tmp_full_imgs
-    print ("new full images shape: \n" +str(full_imgs.shape))
-    return full_imgs
-
-def extract_ordered_overlap(full_imgs, patch_h, patch_w,stride_h,stride_w):
-    assert (len(full_imgs.shape)==4)  #4D arrays
-    assert (full_imgs.shape[1]==1 or full_imgs.shape[1]==3)  #check the channel is 1 or 3
-    img_h = full_imgs.shape[2]  #height of the full image
-    img_w = full_imgs.shape[3] #width of the full image
-    assert ((img_h-patch_h)%stride_h==0 and (img_w-patch_w)%stride_w==0)
-    N_patches_img = ((img_h-patch_h)//stride_h+1)*((img_w-patch_w)//stride_w+1)  #// --> division between integers
-    N_patches_tot = N_patches_img*full_imgs.shape[0]
-    print ("Number of patches on h : " +str(((img_h-patch_h)//stride_h+1)))
-    print ("Number of patches on w : " +str(((img_w-patch_w)//stride_w+1)))
-    print ("number of patches per image: " +str(N_patches_img) +", totally for this dataset: " +str(N_patches_tot))
-    patches = np.empty((N_patches_tot,full_imgs.shape[1],patch_h,patch_w))
-    iter_tot = 0   #iter over the total number of patches (N_patches)
-    for i in range(full_imgs.shape[0]):  #loop over the full images
-        for h in range((img_h-patch_h)//stride_h+1):
-            for w in range((img_w-patch_w)//stride_w+1):
-                patch = full_imgs[i,:,h*stride_h:(h*stride_h)+patch_h,w*stride_w:(w*stride_w)+patch_w]
-                patches[iter_tot]=patch
-                iter_tot +=1   #total
-    assert (iter_tot==N_patches_tot)
-    return patches  #array with all the full_imgs divided in patches
+from SegCaps.model_helper import create_model
+from gen_preprocess_data import pre_process_image
+from gen_preprocess_data import extract_ordered_overlap
+from gen_preprocess_data import paint_border_overlap
+from gen_preprocess_data import recompone_overlap
+import BCDU.models as M
+from matplotlib import pyplot as plt
+import os
 
 
-def recompone_overlap(preds, img_h, img_w, stride_h, stride_w):
-    assert (len(preds.shape)==4)  #4D arrays
-    assert (preds.shape[1]==1 or preds.shape[1]==3)  #check the channel is 1 or 3
-    patch_h = preds.shape[2]
-    patch_w = preds.shape[3]
-    N_patches_h = (img_h-patch_h)//stride_h+1
-    N_patches_w = (img_w-patch_w)//stride_w+1
-    N_patches_img = N_patches_h * N_patches_w
-    print ("N_patches_h: " +str(N_patches_h))
-    print ("N_patches_w: " +str(N_patches_w))
-    print ("N_patches_img: " +str(N_patches_img))
-    assert (preds.shape[0]%N_patches_img==0)
-    N_full_imgs = preds.shape[0]//N_patches_img
-    print ("According to the dimension inserted, there are " +str(N_full_imgs) +" full images (of " +str(img_h)+"x" +str(img_w) +" each)")
-    full_prob = np.zeros((N_full_imgs,preds.shape[1],img_h,img_w))  #itialize to zero mega array with sum of Probabilities
-    full_sum = np.zeros((N_full_imgs,preds.shape[1],img_h,img_w))
+IMAGE_RESIZE_PER = 1         # Resize Percentage
+PATCH_SIZE = (64, 64)           # (height, width)
+STRIDE_SIZE = (32, 32)          # (height, width)
+IMG_SIZE = None
 
-    k = 0 #iterator over all the patches
-    for i in range(N_full_imgs):
-        for h in range((img_h-patch_h)//stride_h+1):
-            for w in range((img_w-patch_w)//stride_w+1):
-                full_prob[i,:,h*stride_h:(h*stride_h)+patch_h,w*stride_w:(w*stride_w)+patch_w]+=preds[k]
-                full_sum[i,:,h*stride_h:(h*stride_h)+patch_h,w*stride_w:(w*stride_w)+patch_w]+=1
-                k+=1
-    assert(k==preds.shape[0])
-    assert(np.min(full_sum)>=1.0)  #at least one
-    final_avg = full_prob/full_sum
-    print (final_avg.shape)
-    assert(np.max(final_avg)<=1.0) #max value for a pixel is 1.0
-    assert(np.min(final_avg)>=0.0) #min value for a pixel is 0.0
-    return final_avg
+DIR_NAME = '../retcam'
+RESULT_DIR = DIR_NAME + '_result_seg'
 
-for image_path in images_to_test:
+# file_names = glob(DIR_NAME + '/*.png')
+file_names = glob('training_dataset/input/*.jpg')
+if not os.path.isdir(RESULT_DIR):
+    os.mkdir(RESULT_DIR)
+pp(file_names)
+
+net_input_shape = (64, 64, 1)
+model_list = create_model(net='segcapsr3', input_shape=net_input_shape)
+model = model_list[1]
+model.load_weights('models/seg_weight-01.hdf5')
+model.summary()
+# exit()
+
+k = 0
+for i, file_name in enumerate(file_names, 1):
     print('-'*80)
-    original_img = np.asarray(Image.open(image_path))
-    print(original_img.shape)
-    input_img = pre_process_image(original_img)
-    cv2.imwrite('e.jpg', input_img)
-    orig_img_shape = input_img.shape
-    output_img_shape = (int(np.ceil(input_img.shape[0]/PATCH_SIZE[0]) * PATCH_SIZE[0]), 
-                        int(np.ceil(input_img.shape[1]/PATCH_SIZE[1]) * PATCH_SIZE[1]),
-                        input_img.shape[2])
-    # output_img = np.zeros(output_img_shape, dtype=np.uint8)
-    # patch_inputs = []
-    # for i in range(0, input_img.shape[0], PATCH_SIZE[0]):
-    #     for j in range(0, input_img.shape[1], PATCH_SIZE[1]):
-    #         net_input = input_img[i:i+PATCH_SIZE[0], j:j+PATCH_SIZE[1], :]
-    #         patch_shape = net_input.shape
-    #         if patch_shape[0] != PATCH_SIZE[0]:
-    #             net_input = np.append(net_input, 
-    #                                   np.zeros((PATCH_SIZE[0] - patch_shape[0], patch_shape[1], patch_shape[2])), 
-    #                                   axis=0)
-    #         if patch_shape[1] != PATCH_SIZE[1]:
-    #             net_input = np.append(net_input,
-    #                                   np.zeros((PATCH_SIZE[0], PATCH_SIZE[1] - patch_shape[1], patch_shape[2])),
-    #                                   axis=1)
-    #         patch_inputs.append(net_input)
-    # batch_input = np.array(patch_inputs)
-    input_img = np.einsum('kijl->klji', np.expand_dims(input_img, axis=0))
-    input_img = paint_border_overlap(input_img, *PATCH_SIZE, 32, 32)
-    print(input_img.shape)
-    batch_input = extract_ordered_overlap(input_img, *PATCH_SIZE, 32, 32)
-    batch_input = np.einsum('kijl->klji', batch_input)
-    print(batch_input.shape)
-    predicted_mask = m.predict(batch_input)
-    predicted_mask = np.einsum('kijl->klji', predicted_mask)
-    print(predicted_mask.shape)
-    # print(np.max(predicted_mask))
-    # k = 0
-    # for i in range(0, input_img.shape[0], PATCH_SIZE[0]):
-    #     for j in range(0, input_img.shape[1], PATCH_SIZE[1]):
-    #         t = predicted_mask[k] * 255
-    #         t[t > 255] = 255
-    #         output_img[i:i+PATCH_SIZE[0], j:j+PATCH_SIZE[1], :] = t
-    #         # print(np.max(predicted_mask[k]))
-    #         # print(np.min(predicted_mask[k]))
-    #         # print(predicted_mask[k].dtype)
-    #         # output_img[i:i+PATCH_SIZE[0], j:j+PATCH_SIZE[1], :] = batch_input[k]
-    #         k += 1
-    # print(output_img.shape)
-    # output_img = output_img[:orig_img_shape[0], :orig_img_shape[1], :]
-    print(orig_img_shape)
-    output_img = recompone_overlap(predicted_mask, input_img.shape[2], input_img.shape[3], 32, 32)
-    output_img = np.einsum('kijl->klji', output_img)[0]
-    print(output_img.shape)
-    print(np.max(output_img))
-    print(np.min(output_img))
-    t = output_img * 255
-    t[t > 255] = 255
-    output_img = np.array(t, dtype=np.uint8)
-    cv2.imwrite('temp.jpg', np.repeat(output_img, [3], -1))
-    # Image.fromarray(np.array( np.repeat(output_img, [3], -1), dtype=np.float32)).save('temp.jpg')
-    print(output_img.shape)
+    print("Progress: {}/{}".format(i, len(file_names)))
+    image = Image.open(file_name)
+    if not IMG_SIZE:
+        IMG_SIZE = (int(image.size[0] * IMAGE_RESIZE_PER), 
+                    int(image.size[1] * IMAGE_RESIZE_PER))
+    image = np.asarray(image.resize(IMG_SIZE))
+    image = image[:, :, 0:3]
+
+    print(image.shape)
+    image = pre_process_image(image, gamma=0.9)
+
+    #extend both images and masks so they can be divided exactly by the patches dimensions
+    image = paint_border_overlap(image, *PATCH_SIZE, *STRIDE_SIZE)
+    new_size = (image.shape[2], image.shape[3])
+
+    print ("\ntest images/masks shape:")
+    print (image.shape)
+    print ("test images range (min-max): " +str(np.min(image)) +' - '+str(np.max(image)))
+    print ("test masks are within 0-1\n")
+
+    image_patches = extract_ordered_overlap(image, *PATCH_SIZE, *STRIDE_SIZE)
+
+    print ("\ntest PATCHES images/masks shape:")
+    print (image_patches.shape)
+    print ("test PATCHES images range (min-max): " +str(np.min(image_patches)) +' - '+str(np.max(image_patches)))
+    
+    # Prediction
+    image_patches = np.einsum('klij->kijl', image_patches)
+    predictions = model.predict(image_patches, batch_size=16, verbose=1)[1]
+    print(predictions.shape)
+    predictions = np.einsum('kijl->klij', predictions)
+
+    orinal_image = recompone_overlap(predictions, *new_size, *STRIDE_SIZE)
+    print(orinal_image.shape)
+    orinal_image = np.einsum('klij->kijl', orinal_image)
+    orinal_image = orinal_image[:, 0:IMG_SIZE[1], 0:IMG_SIZE[0], :]
+    image_name = ''.join(file_name.replace('\\', '/').split('/')[-1].split('.')[:-1])
+    save_image_path = RESULT_DIR + '/' + image_name + '_' + str(PATCH_SIZE) + '_' + str(STRIDE_SIZE) + \
+                        '_{}.jpg'.format(k)
+    plt.imsave(save_image_path, np.repeat(orinal_image[0], 3, axis=-1))
+    print("Saving Image as", save_image_path)
     print()
     break
-
-

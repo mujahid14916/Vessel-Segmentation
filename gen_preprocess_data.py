@@ -59,12 +59,12 @@ def read_training_images(files):
     return images
 
 
-def pre_process_image(image, save_image=False):
+def pre_process_image(image, save_image=False, gamma=1.2):
     gray_scale = rgb2gray(np.expand_dims(image, axis=0))[0]
     normalized = cv2.normalize(gray_scale, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F) * 255
     normalized = np.einsum('kijl->klij', np.reshape(normalized, (1, *normalized.shape, 1)))
     clache = clahe_equalized(normalized)
-    gamma = adjust_gamma(clache, 1.2)
+    gamma = adjust_gamma(clache, gamma)
     if save_image:
         return np.einsum('klij->kijl', gamma)[0]
     return gamma/255.

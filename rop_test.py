@@ -25,7 +25,7 @@ if not os.path.isdir(RESULT_DIR):
 pp(file_names)
 
 model = M.BCDU_net_D3(input_size = (*PATCH_SIZE, 1))
-models_path = glob('models/bcdu_*.hdf5')
+models_path = glob('models/bcdu_weight_dice*.hdf5')[-5:]
 for k, model_path in enumerate(models_path, 1):
     model.load_weights(model_path)
 
@@ -40,7 +40,7 @@ for k, model_path in enumerate(models_path, 1):
         image = image[:, :, 0:3]
 
         print(image.shape)
-        image = pre_process_image(image)
+        image = pre_process_image(image, gamma=0.9)
 
         #extend both images and masks so they can be divided exactly by the patches dimensions
         image = paint_border_overlap(image, *PATCH_SIZE, *STRIDE_SIZE)
@@ -68,7 +68,7 @@ for k, model_path in enumerate(models_path, 1):
         orinal_image = orinal_image[:, 0:IMG_SIZE[1], 0:IMG_SIZE[0], :]
         image_name = ''.join(file_name.replace('\\', '/').split('/')[-1].split('.')[:-1])
         save_image_path = RESULT_DIR + '/' + image_name + '_' + str(PATCH_SIZE) + '_' + str(STRIDE_SIZE) + \
-                          '_{}.jpg'.format('_'.join(model_path.replace('\\', '/').split('/')[-1].split('-')[:2]))
+                          '_{}g.jpg'.format('_'.join(model_path.replace('\\', '/').split('/')[-1].split('-')[:2]))
         plt.imsave(save_image_path, np.repeat(orinal_image[0], 3, axis=-1))
         print("Saving Image as", save_image_path)
         print()

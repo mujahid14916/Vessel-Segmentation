@@ -17,6 +17,13 @@ def dice_loss(y_true, y_pred):
     return 1 - numerator / denominator
 
 
+def dice_loss2(y_true, y_pred):
+  numerator = 2 * tf.reduce_sum(y_true * y_pred, axis=-1)
+  denominator = tf.reduce_sum(y_true + y_pred, axis=-1)
+
+  return 1 - (numerator + 1) / (denominator + 1)
+
+
 def weighted_cross_entropy(beta):
     def convert_to_logits(y_pred):
         # see https://github.com/tensorflow/tensorflow/blob/r1.10/tensorflow/python/keras/backend.py#L3525
@@ -110,7 +117,7 @@ def BCDU_net_D3(input_size = (256,256,1)):
     conv9 = Conv2D(1, 1, activation = 'sigmoid')(conv8)
 
     # loss = weighted_binary_crossentropy_loss(pos_weight=1.5)
-    loss = dice_loss
+    loss = dice_loss2
 
     model = Model(input = inputs, output = conv9)
     model.compile(optimizer = Adam(lr = 1e-4), loss = loss, metrics = ['accuracy'])

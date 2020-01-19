@@ -41,8 +41,8 @@ def get_loss(net, recon_wei, choice):
         raise Exception("Unknow loss_type")
 
     if net.find('caps') != -1:
-        # return {'out_seg': loss, 'out_recon': 'mse'}, {'out_seg': 1., 'out_recon': recon_wei}
-        return {'out_seg': loss}, {'out_seg': 1., 'out_recon': recon_wei}
+        return {'out_seg': loss, 'out_recon': 'mse'}, {'out_seg': 1., 'out_recon': recon_wei}
+        # return {'out_seg': loss}, {'out_seg': 1., 'out_recon': recon_wei}
     else:
         return loss, None
 
@@ -73,7 +73,7 @@ def compile_model(net_input_shape, uncomp_model, net='segcaps'):
     loss, loss_weighting = get_loss(net=net,
                                     recon_wei=2, choice='dice')
 
-    uncomp_model.compile(optimizer=opt, loss='binary_crossentropy', metrics=['accuracy'])
+    uncomp_model.compile(optimizer=opt, loss=loss, metrics=metrics)
     return uncomp_model
 
 
@@ -144,17 +144,20 @@ def train(args, train_list, val_list, u_model, net_input_shape):
 from keras.callbacks import ModelCheckpoint, TensorBoard,ReduceLROnPlateau
 PATCH_SIZE = (64, 64)
 BATCH_SIZE = 32
-TOTAL_BATCHES = 10000
-TOTAL_VAL_DATA_BATCHES = 1000
-WEIGHT_FILE_NAME = 'models/seg_weight.hdf5'
-EPOCHS = 5
+TOTAL_BATCHES = 100
+TOTAL_VAL_DATA_BATCHES = 10
+WEIGHT_FILE_NAME = 'models/seg_weight-04-0.829930.hdf5'
+EPOCHS = 1
 
 net_input_shape = (64, 64, 1)
 model_list = create_model(net='segcapsr3', input_shape=net_input_shape)
 model_list[0].summary()
 model = compile_model(net_input_shape, model_list[0], net='segcaps')
 
-mcp_save = ModelCheckpoint('models/seg_weight-{epoch:02d}-{val_out_seg_accuracy:.6f}.hdf5', monitor='val_loss', mode='min')
+# model.load_weights(WEIGHT_FILE_NAME)
+exit()
+
+mcp_save = ModelCheckpoint('models/seg_weight-{epoch:02d}.hdf5', monitor='val_loss', mode='min')
 history = model.fit_generator(data_generator('training_dataset', 
                                             'pre-processed', 
                                             'label-1', 'png', 
@@ -171,7 +174,8 @@ history = model.fit_generator(data_generator('training_dataset',
                                                             patch_size=PATCH_SIZE,
                                                             caps=True),
                             validation_steps=TOTAL_VAL_DATA_BATCHES,
-                            callbacks=[mcp_save])
+                            callbacks=[mcp_save],
+                            initial_epoch=0)
 
 # print_summary(model=model_list[0], positions=[.38, .65, .75, 1.])
 
