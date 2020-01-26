@@ -58,10 +58,10 @@ model.compile(
     metrics=['accuracy']
 )
 save_model_callback = keras.callbacks.ModelCheckpoint(
-    filepath='weights-{epoch:04d}-{val_loss:.6f}.hdf5', 
-    monitor='val_loss', 
+    filepath='weights-{epoch:04d}-{val_loss:.6f}-{val_accuracy:.6f}.hdf5', 
+    monitor='val_accuracy', 
     save_best_only=True,
-    period=5
+    period=1
 )
 
 # model.fit(
