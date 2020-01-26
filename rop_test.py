@@ -25,7 +25,7 @@ if not os.path.isdir(RESULT_DIR):
 pp(file_names)
 
 model = M.BCDU_net_D3(input_size = (*PATCH_SIZE, 1))
-models_path = glob('models/bcdu_weight_dice*.hdf5')[-5:]
+models_path = glob('models/bcdu_weight_dice*.hdf5')
 for k, model_path in enumerate(models_path, 1):
     model.load_weights(model_path)
 

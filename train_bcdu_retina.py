@@ -18,8 +18,8 @@ PATCH_SIZE = (128, 128)
 BATCH_SIZE = 16
 TOTAL_BATCHES = 10000
 TOTAL_VAL_DATA_BATCHES = 1000
-WEIGHT_FILE_NAME = 'models/bcdu_weight_dice-24-0.920660.hdf5'
-EPOCHS = 27
+WEIGHT_FILE_NAME = 'models/bcdu_weight_dice-40-0.920886.hdf5'
+EPOCHS = 45
 
 #model = M.unet2_segment(input_size = (64,64,1))
 print("Initializing Network")
@@ -49,8 +49,8 @@ history = model.fit_generator(data_generator('training_dataset',
                                                              patch_size=PATCH_SIZE),
                               validation_steps=TOTAL_VAL_DATA_BATCHES,
                               callbacks=[mcp_save, reduce_lr_loss],
-                              initial_epoch=24
-                              )  # TODO: Check Class weights
+                              initial_epoch=40
+                              )
 
 with open('training_history/bcdu_dice{}.out'.format(time()), 'wb') as f:
     d = {}
