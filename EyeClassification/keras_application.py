@@ -1,4 +1,3 @@
-import tensorflow as tf
 import keras
 from matplotlib import pyplot as plt
 
@@ -6,7 +5,7 @@ image_size = (256, 256)
 Input_Shape = (*image_size, 3)
 batch_size = 16
 training_data_dir = 'dataset'
-epochs = 2000
+epochs = 500
 
 data_generator = keras.preprocessing.image.ImageDataGenerator(
     brightness_range=(0.9, 1.1),
@@ -33,30 +32,16 @@ validation_generator = data_generator.flow_from_directory(
     subset='validation'
 )
 
-model = keras.models.Sequential([
-    keras.layers.Conv2D(filters=32, kernel_size=(3, 3), padding='same', activation='elu', input_shape=Input_Shape),
-    keras.layers.MaxPool2D(pool_size=(2, 2)),
-    keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.MaxPool2D(pool_size=(2, 2)),
-    keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.MaxPool2D(pool_size=(2, 2)),
-    keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.MaxPool2D(pool_size=(2, 2)),
-    # keras.layers.MaxPool2D(pool_size=(2, 2)),
-    keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same', activation='relu', kernel_initializer = 'he_normal'),
-    keras.layers.MaxPool2D(pool_size=(2, 2), padding='same'),
-    keras.layers.Flatten(),
-    # keras.layers.Dropout(rate=0.5),
-    keras.layers.Dense(100, activation='relu'),
-    keras.layers.Dropout(rate=0.5),
-    keras.layers.Dense(1, activation='sigmoid'),
-])
+pre_trained_model = keras.applications.InceptionV3(include_top=False, input_shape=Input_Shape, classes=2)
 
-model.load_weights('weights-0871-0.0219-0.9895-0.0822-0.9398.hdf5')
-
+for layer in pre_trained_model.layers[:-10]:
+    layer.trainable = False
+out = pre_trained_model.output
+out = keras.layers.Flatten()(out)
+out = keras.layers.Dense(100, activation='relu')(out)
+out = keras.layers.Dropout(0.5)(out)
+out = keras.layers.Dense(1, activation='sigmoid')(out)
+model = keras.models.Model(inputs=[pre_trained_model.input], outputs=[out])
 model.summary()
 model.compile(
     optimizer=keras.optimizers.Adam(learning_rate=1e-5), 
@@ -69,12 +54,6 @@ save_model_callback = keras.callbacks.ModelCheckpoint(
     save_best_only=True,
     period=1
 )
-
-# model.fit(
-#     x=train_generator,
-#     epochs=epochs,
-#     callbacks=[save_model_callback],
-# )
 
 history = model.fit_generator(
     generator=train_generator,
