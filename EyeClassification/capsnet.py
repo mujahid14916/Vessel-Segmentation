@@ -1,12 +1,15 @@
 import tensorflow as tf
 import keras
+from keras.layers import Conv2D, Input, MaxPool2D, Reshape, Lambda
+from keras.models import Model
 from matplotlib import pyplot as plt
+from capsutils import *
 
 image_size = (256, 256)
 Input_Shape = (*image_size, 3)
 batch_size = 16
 training_data_dir = 'dataset'
-epochs = 2000
+epochs = 200
 
 data_generator = keras.preprocessing.image.ImageDataGenerator(
     brightness_range=(0.9, 1.1),
@@ -20,7 +23,7 @@ train_generator = data_generator.flow_from_directory(
     target_size=image_size, 
     batch_size=batch_size,
     shuffle=True,
-    class_mode='binary',
+    class_mode='categorical',
     subset='training'
 )
 
@@ -29,38 +32,42 @@ validation_generator = data_generator.flow_from_directory(
     target_size=image_size, 
     batch_size=batch_size,
     shuffle=True,
-    class_mode='binary',
+    class_mode='categorical',
     subset='validation'
 )
 
-model = keras.models.Sequential([
-    keras.layers.Conv2D(filters=32, kernel_size=(3, 3), padding='same', activation='elu', input_shape=Input_Shape),
-    keras.layers.MaxPool2D(pool_size=(2, 2)),
-    keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.MaxPool2D(pool_size=(2, 2)),
-    keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.MaxPool2D(pool_size=(2, 2)),
-    keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.MaxPool2D(pool_size=(2, 2)),
-    # keras.layers.MaxPool2D(pool_size=(2, 2)),
-    keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same', activation='relu', kernel_initializer = 'he_normal'),
-    keras.layers.MaxPool2D(pool_size=(2, 2), padding='same'),
-    keras.layers.Flatten(),
-    # keras.layers.Dropout(rate=0.5),
-    keras.layers.Dense(100, activation='relu'),
-    keras.layers.Dropout(rate=0.5),
-    keras.layers.Dense(1, activation='sigmoid'),
-])
+# A common Conv2D model
+input_image = Input(shape=(None, None, 3))
+x = Conv2D(64, (3, 3), activation='relu')(input_image)
+x = Conv2D(64, (3, 3), activation='relu')(x)
+x = MaxPool2D((2, 2))(x)
+x = Conv2D(128, (3, 3), activation='relu')(x)
+x = Conv2D(128, (3, 3), activation='relu')(x)
+# x = MaxPool2D((2, 2))(x)
+# x = Conv2D(256, (3, 3), activation='relu')(x)
+# x = Conv2D(256, (3, 3), activation='relu')(x)
 
-model.load_weights('weights-1723-0.0019-0.9987-0.0436-0.9451.hdf5')
 
+"""now we reshape it as (batch_size, input_num_capsule, input_dim_capsule)
+then connect a Capsule layer.
+
+the output of final model is the lengths of 10 Capsule, whose dim=16.
+
+the length of Capsule is the proba,
+so the problem becomes a 10 two-classification problem.
+"""
+x = Reshape((-1, 128))(x)
+capsule = Capsule(10, 16, 3, True)(x)
+# x = Capsule(32, 16, 3, True)(x)
+capsule = Capsule(2, 16, 3, True)(capsule)
+output = Lambda(lambda z: K.sqrt(K.sum(K.square(z), 2)))(capsule)
+model = Model(inputs=input_image, outputs=output)
+
+# model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 model.summary()
 model.compile(
-    optimizer=keras.optimizers.Adam(learning_rate=1e-5), 
-    loss=keras.losses.binary_crossentropy,
+    optimizer=keras.optimizers.Adam(learning_rate=1e-3), 
+    loss=margin_loss,
     metrics=['accuracy']
 )
 save_model_callback = keras.callbacks.ModelCheckpoint(
