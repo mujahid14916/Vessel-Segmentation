@@ -3,6 +3,6 @@ __pycache__
 training_dataset/patches/
 *.hdf5
 .vscode
-EyeClassification/dataset/
 EyeClassification/neoDataSet*
 EyeClassification/predict*
+*.png

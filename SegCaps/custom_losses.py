@@ -11,6 +11,14 @@ This file contains the definitions of custom loss functions not present in the d
 
 import tensorflow as tf
 
+
+def dice_loss2(y_true, y_pred):
+    numerator = 2 * tf.reduce_sum(y_true * y_pred, axis=-1)
+    denominator = tf.reduce_sum(y_true + y_pred, axis=-1)
+
+    return 1 - (numerator + 1) / (denominator + 1)
+
+
 def dice_soft(y_true, y_pred, loss_type='sorensen', axis=[1,2,3], smooth=1e-5, from_logits=False):
     """Soft dice (Sørensen or Jaccard) coefficient for comparing the similarity
     of two batch of data, usually be used for binary image segmentation
