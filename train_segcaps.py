@@ -32,7 +32,7 @@ def main():
     validation_Y = np.array(validation_Y)
     mask = validation_X * validation_Y
 
-    log_dir = 'train'
+    log_dir = 'segcaps_logs'
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
     mcp_save = tf.keras.callbacks.ModelCheckpoint('models/segcaps-model-{epoch:02d}-{loss:.6f}-{out_seg_accuracy:0.6f}.hdf5', monitor='loss', mode='min')
 
