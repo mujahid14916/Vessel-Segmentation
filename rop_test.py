@@ -17,7 +17,7 @@ STRIDE_SIZE = (64, 64)          # (height, width)
 IMG_SIZE = None
 
 DIR_NAME = '../retcam'
-RESULT_DIR = DIR_NAME + '_result'
+RESULT_DIR = DIR_NAME + '_caps_results_90'
 
 file_names = glob(DIR_NAME + '/*.png')
 if not os.path.isdir(RESULT_DIR):
@@ -25,11 +25,11 @@ if not os.path.isdir(RESULT_DIR):
 pp(file_names)
 
 model = M.BCDU_net_D3(input_size = (*PATCH_SIZE, 1))
-models_path = glob('models/bcdu_weight_dice*.hdf5')
+models_path = glob('models/bcdu_weight_dice-40*.hdf5')
 for k, model_path in enumerate(models_path, 1):
     model.load_weights(model_path)
 
-    for i, file_name in enumerate(file_names, 1):
+    for i, file_name in enumerate(file_names[:10], 1):
         print('-'*80)
         print("Progress: {}/{}".format(i, len(file_names)))
         image = Image.open(file_name)
@@ -68,7 +68,7 @@ for k, model_path in enumerate(models_path, 1):
         orinal_image = orinal_image[:, 0:IMG_SIZE[1], 0:IMG_SIZE[0], :]
         image_name = ''.join(file_name.replace('\\', '/').split('/')[-1].split('.')[:-1])
         save_image_path = RESULT_DIR + '/' + image_name + '_' + str(PATCH_SIZE) + '_' + str(STRIDE_SIZE) + \
-                          '_{}g.jpg'.format('_'.join(model_path.replace('\\', '/').split('/')[-1].split('-')[:2]))
+                          '_{}bcdu.jpg'.format('_'.join(model_path.replace('\\', '/').split('/')[-1].split('-')[:2]))
         plt.imsave(save_image_path, np.repeat(orinal_image[0], 3, axis=-1))
         print("Saving Image as", save_image_path)
         print()

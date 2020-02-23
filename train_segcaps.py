@@ -2,16 +2,16 @@ from SegCaps.capsnet import CapsNetR3
 from glob import glob
 import tensorflow as tf
 import numpy as np
-from gen_data import data_generator
+from gen_data import data_generator, full_image_generator
 import os
 
 
 PATCH_SIZE = (256, 256)
 BATCH_SIZE = 1
 INPUT_SHAPE = (*PATCH_SIZE, 1)
-SAVED_MODEL_PATH = 'models/segcaps-model-15-0.088608.hdf5'
-INITIAL_EPOCH = 15
-EPOCHS = 30
+SAVED_MODEL_PATH = 'models/segcaps-model-75-0.052778-0.949393.hdf5'
+INITIAL_EPOCH = 75
+EPOCHS = 90
 
 
 def main():

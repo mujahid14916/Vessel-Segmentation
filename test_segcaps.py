@@ -8,18 +8,19 @@ from gen_preprocess_data import paint_border_overlap
 from gen_preprocess_data import recompone_overlap
 from matplotlib import pyplot as plt
 import os
+import cv2
 from SegCaps.capsnet import CapsNetR3
 from SegCaps.capsule_layers import ConvCapsuleLayer, Length, Mask, DeconvCapsuleLayer
 import tensorflow as tf
 
 
-IMAGE_RESIZE_PER = 0.25         # Resize Percentage
+IMAGE_RESIZE_PER = 1         # Resize Percentage
 PATCH_SIZE = (256, 256)           # (height, width)
 STRIDE_SIZE = (64, 64)          # (height, width)
 IMG_SIZE = None
 
-DIR_NAME = '../neo'
-RESULT_DIR = DIR_NAME + '_caps_result'
+DIR_NAME = '../retcam'
+RESULT_DIR = DIR_NAME + '_caps_results_90'
 
 
 input_shape=(256, 256, 1)
@@ -31,7 +32,7 @@ if not os.path.isdir(RESULT_DIR):
     os.mkdir(RESULT_DIR)
 pp(file_names)
 
-models_path = glob('models/segcaps-model-15*.hdf5')
+models_path = glob('models/segcaps-model-90*.hdf5')
 for k, model_path in enumerate(models_path, 1):
     model = tf.keras.models.load_model(model_path, 
                                        custom_objects={
@@ -49,7 +50,7 @@ for k, model_path in enumerate(models_path, 1):
         if not found:
             print(test_layer.name)
     
-    for i, file_name in enumerate(file_names, 1):
+    for i, file_name in enumerate(file_names[:10], 1):
         print('-'*80)
         print("Progress: {}/{}".format(i, len(file_names)))
         image = Image.open(file_name)
@@ -82,13 +83,19 @@ for k, model_path in enumerate(models_path, 1):
         predictions = test_model.predict(image_patches, batch_size=1, verbose=1)[0]
         predictions = np.einsum('kijl->klij', predictions)
 
-        orinal_image = recompone_overlap(predictions, *new_size, *STRIDE_SIZE)
-        print(orinal_image.shape)
-        orinal_image = np.einsum('klij->kijl', orinal_image)
-        orinal_image = orinal_image[:, 0:IMG_SIZE[1], 0:IMG_SIZE[0], :]
+        original_image = recompone_overlap(predictions, *new_size, *STRIDE_SIZE)
+        print(original_image.shape)
+        original_image = np.einsum('klij->kijl', original_image)
+        original_image = original_image[:, 0:IMG_SIZE[1], 0:IMG_SIZE[0], :]
+        original_image = np.repeat(original_image[0], 3, axis=-1)
+        
+        threshold = cv2.threshold(original_image, 150/255, 255/255, cv2.THRESH_BINARY)[1]
         image_name = ''.join(file_name.replace('\\', '/').split('/')[-1].split('.')[:-1])
         save_image_path = RESULT_DIR + '/' + image_name + '_' + str(PATCH_SIZE) + '_' + str(STRIDE_SIZE) + \
-                          '_{}g.jpg'.format('_'.join(model_path.replace('\\', '/').split('/')[-1].split('-')[:2]))
-        plt.imsave(save_image_path, np.repeat(orinal_image[0], 3, axis=-1))
+                          '_{}caps.jpg'.format('_'.join(model_path.replace('\\', '/').split('/')[-1].split('-')[:2]))
+        # plt.imsave(save_image_path, np.repeat(original_image[0], 3, axis=-1))
+        # plt.imsave(save_image_path, original_image)
+        cv2.imwrite(save_image_path, np.array(original_image*255, dtype=np.uint8))
+        cv2.imwrite('.'.join(save_image_path.split('.')[:-1]) + '_thresh.jpg', np.array(threshold*255, dtype=np.uint8))
         print("Saving Image as", save_image_path)
         print()
