@@ -5,4 +5,5 @@ training_dataset/patches/
 .vscode
 EyeClassification/neoDataSet*
 EyeClassification/predict*
+EyeFilter/dataset*
 *.png

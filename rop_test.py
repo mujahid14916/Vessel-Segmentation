@@ -16,10 +16,10 @@ PATCH_SIZE = (128, 128)           # (height, width)
 STRIDE_SIZE = (64, 64)          # (height, width)
 IMG_SIZE = None
 
-DIR_NAME = '../retcam'
-RESULT_DIR = DIR_NAME + '_caps_results_90'
+DIR_NAME = 'testing_dataset/input'
+RESULT_DIR = DIR_NAME + '_caps_results_97'
 
-file_names = glob(DIR_NAME + '/*.png')
+file_names = glob(DIR_NAME + '/*.jpg')
 if not os.path.isdir(RESULT_DIR):
     os.mkdir(RESULT_DIR)
 pp(file_names)
@@ -29,7 +29,7 @@ models_path = glob('models/bcdu_weight_dice-40*.hdf5')
 for k, model_path in enumerate(models_path, 1):
     model.load_weights(model_path)
 
-    for i, file_name in enumerate(file_names[:10], 1):
+    for i, file_name in enumerate(file_names[:20], 1):
         print('-'*80)
         print("Progress: {}/{}".format(i, len(file_names)))
         image = Image.open(file_name)

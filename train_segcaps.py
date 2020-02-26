@@ -4,14 +4,15 @@ import tensorflow as tf
 import numpy as np
 from gen_data import data_generator, full_image_generator
 import os
+from SegCaps.custom_losses import weighted_binary_crossentropy_loss
 
 
 PATCH_SIZE = (256, 256)
 BATCH_SIZE = 1
 INPUT_SHAPE = (*PATCH_SIZE, 1)
-SAVED_MODEL_PATH = 'models/segcaps-model-75-0.052778-0.949393.hdf5'
-INITIAL_EPOCH = 75
-EPOCHS = 90
+SAVED_MODEL_PATH = 'models/segcaps-model-110-0.047464-0.951363.hdf5'
+INITIAL_EPOCH = 110
+EPOCHS = 120
 
 
 def main():
@@ -32,11 +33,11 @@ def main():
     validation_Y = np.array(validation_Y)
     mask = validation_X * validation_Y
 
-    log_dir = 'segcaps_logs'
+    log_dir = 'segcaps_logs2'
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
     mcp_save = tf.keras.callbacks.ModelCheckpoint('models/segcaps-model-{epoch:02d}-{loss:.6f}-{out_seg_accuracy:0.6f}.hdf5', monitor='loss', mode='min')
 
-    train_model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss={'out_seg': 'binary_crossentropy', 'out_recon': 'mse'}, metrics=['accuracy'])
+    train_model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-5), loss={'out_seg': weighted_binary_crossentropy_loss(4), 'out_recon': 'mse'}, metrics=['accuracy'])
     if os.path.isfile(SAVED_MODEL_PATH):
         train_model.load_weights(SAVED_MODEL_PATH)
         print("Weights Loaded Successfully")
