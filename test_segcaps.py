@@ -151,11 +151,28 @@ if not os.path.isdir(RESULT_DIR):
 #         print()
 
 def main():
-    image = tf.keras.preprocessing.image.load_img('../retcam/00bbc687-4c61-4bfb-894b-ea04a12d436b_4.png')
+    image = tf.keras.preprocessing.image.load_img('../00bbc687-4c61-4bfb-894b-ea04a12d436b_4.png')
     image = np.asarray(image)
+    
+    print("Regular Image")
     image, th = segment_vessel_capsnet(image)
-    tf.keras.preprocessing.image.save_img('../retcam_caps_results_22/1.png', image)
-    tf.keras.preprocessing.image.save_img('../retcam_caps_results_22/1.png', th)
+    # tf.keras.preprocessing.image.save_img('../retcam_caps_results_22/1.png', image)
+    tf.keras.preprocessing.image.save_img('../1.png', th)
+
+    print("Horizontal Flip")
+    img, th = segment_vessel_capsnet(image[:, ::-1, ...])
+    # tf.keras.preprocessing.image.save_img('../retcam_caps_results_22/1.png', image)
+    tf.keras.preprocessing.image.save_img('../2.png', th)
+    
+    print("Vertical Flip")
+    img, th = segment_vessel_capsnet(image[::-1, :, ...])
+    # tf.keras.preprocessing.image.save_img('../retcam_caps_results_22/1.png', image)
+    tf.keras.preprocessing.image.save_img('../3.png', th)
+    
+    print("Horizontal & Vertical Flip")
+    img, th = segment_vessel_capsnet(image[::-1, ::-1, ...])
+    # tf.keras.preprocessing.image.save_img('../retcam_caps_results_22/1.png', image)
+    tf.keras.preprocessing.image.save_img('../4.png', th)
 
 
 if __name__ == '__main__':
