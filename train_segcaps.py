@@ -10,9 +10,9 @@ from SegCaps.custom_losses import weighted_binary_crossentropy_loss
 PATCH_SIZE = (256, 256)
 BATCH_SIZE = 1
 INPUT_SHAPE = (*PATCH_SIZE, 1)
-SAVED_MODEL_PATH = 'models/segcaps-model-110-0.047464-0.951363.hdf5'
-INITIAL_EPOCH = 110
-EPOCHS = 120
+SAVED_MODEL_PATH = 'models/segcaps-model-140-0.097364-0.947126.hdf5'
+INITIAL_EPOCH = 140
+EPOCHS = 150
 
 
 def main():

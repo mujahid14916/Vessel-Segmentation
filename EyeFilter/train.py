@@ -1,18 +1,18 @@
 import tensorflow as tf
-import keras
 from matplotlib import pyplot as plt
+from glob import glob
+import numpy as np
 
 image_size = (256, 256)
 Input_Shape = (*image_size, 3)
 batch_size = 16
-training_data_dir = 'dataset'
+training_data_dir = 'dataset/train'
 epochs = 200
 
-data_generator = keras.preprocessing.image.ImageDataGenerator(
+data_generator = tf.keras.preprocessing.image.ImageDataGenerator(
     brightness_range=(0.9, 1.1),
     channel_shift_range=30,
     rescale=1/255.,
-    validation_split=0.2
 )
 
 train_generator = data_generator.flow_from_directory(
@@ -24,65 +24,57 @@ train_generator = data_generator.flow_from_directory(
     subset='training'
 )
 
-validation_generator = data_generator.flow_from_directory(
-    training_data_dir, 
-    target_size=image_size, 
-    batch_size=batch_size,
-    shuffle=True,
-    class_mode='binary',
-    subset='validation'
-)
+val_X = []
+val_Y = []
+for file in glob('dataset/validation/Bad/*.png'):
+    img = np.asarray(tf.keras.preprocessing.image.load_img(file, target_size=image_size))
+    if np.max(img) > 1:
+        img = img / 255.
+    val_X.append(img)
+    val_Y.append(0)
+for file in glob('dataset/validation/Good/*.png'):
+    img = np.asarray(tf.keras.preprocessing.image.load_img(file, target_size=image_size))
+    if np.max(img) > 1:
+        img = img / 255.
+    val_X.append(img)
+    val_Y.append(1)
 
-model = keras.models.Sequential([
-    keras.layers.Conv2D(filters=32, kernel_size=(3, 3), padding='same', activation='elu', input_shape=Input_Shape),
-    keras.layers.MaxPool2D(pool_size=(2, 2)),
-    keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.MaxPool2D(pool_size=(2, 2)),
-    keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.MaxPool2D(pool_size=(2, 2)),
-    keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.MaxPool2D(pool_size=(2, 2)),
-    # keras.layers.MaxPool2D(pool_size=(2, 2)),
-    keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.MaxPool2D(pool_size=(2, 2), padding='same'),
-    keras.layers.Flatten(),
-    # keras.layers.Dropout(rate=0.5),
-    keras.layers.Dense(100, activation='relu'),
-    keras.layers.Dropout(rate=0.5),
-    keras.layers.Dense(1, activation='sigmoid'),
+val_X = np.array(val_X)
+val_Y = np.array(val_Y)
+
+model = tf.keras.models.Sequential([
+    tf.keras.layers.Conv2D(filters=32, kernel_size=(3, 3), padding='same', activation='elu', input_shape=Input_Shape),
+    tf.keras.layers.MaxPool2D(pool_size=(2, 2)),
+    tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding='same', activation='elu'),
+    tf.keras.layers.MaxPool2D(pool_size=(2, 2)),
+    tf.keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same', activation='elu'),
+    tf.keras.layers.MaxPool2D(pool_size=(2, 2)),
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dense(100, activation='relu'),
+    tf.keras.layers.Dropout(rate=0.5),
+    tf.keras.layers.Dense(1, activation='sigmoid'),
 ])
-
-# model.load_weights('weights-1723-0.0019-0.9987-0.0436-0.9451.hdf5')
 
 model.summary()
 model.compile(
-    optimizer=keras.optimizers.Adam(learning_rate=1e-3), 
-    loss=keras.losses.binary_crossentropy,
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), 
+    loss=tf.keras.losses.binary_crossentropy,
     metrics=['accuracy']
 )
-save_model_callback = keras.callbacks.ModelCheckpoint(
+save_model_callback = tf.keras.callbacks.ModelCheckpoint(
     filepath='weights-{epoch:04d}-{loss:.4f}-{accuracy:.4f}-{val_loss:.4f}-{val_accuracy:.4f}.hdf5', 
-    monitor='val_accuracy', 
+    monitor='val_loss', 
     save_best_only=True,
     period=1
 )
-
-# model.fit(
-#     x=train_generator,
-#     epochs=epochs,
-#     callbacks=[save_model_callback],
-# )
 
 history = model.fit_generator(
     generator=train_generator,
     steps_per_epoch=train_generator.samples // batch_size,
     epochs=epochs,
     callbacks=[save_model_callback],
-    validation_data=validation_generator,
-    validation_steps=validation_generator.samples // batch_size,
+    validation_data=[val_X, val_Y],
+    class_weight={0: 0.8, 1: 0.2}
 )
 
 # Plot training & validation accuracy values
