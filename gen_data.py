@@ -12,7 +12,7 @@ PATCH_SIZE = (256, 256)       # (height, width)
 TOTAL_PATCHES = 500
 # IMG_MAX_HEIGHT = 800
 # IMG_MIN_HEIGHT = 500
-RESULT_DIR = 'training_dataset/patches'
+RESULT_DIR = '../Corrected/val/patches'
 if not os.path.isdir(RESULT_DIR):
     os.mkdir(RESULT_DIR)
 
@@ -41,8 +41,12 @@ def data_generator(dataset_root_dir, image_dir, label_dir, image_ext, batch_size
             data_lbl = np.array(lbl / 255, dtype=np.float32)
         if len(data_img.shape) == 2:
             data_img = np.expand_dims(data_img, axis=-1)
+        else:
+            data_img = data_img[:, :, :1]
         if len(data_lbl.shape) == 2:
             data_lbl = np.expand_dims(data_lbl, axis=-1)
+        else:
+            data_lbl = data_lbl[:, :, :1]
         images.append(data_img)
         labels.append(data_lbl)
 
@@ -278,7 +282,7 @@ def main():
     patch_size = (256, 256)
     pbar = tqdm(total=total_batches * batch_size, desc='Progress')
     i = 0
-    for data in data_generator('testing_dataset', 'pre-processed', 'label-1', 'png', batch_size, patch_size):
+    for data in data_generator('../Corrected/val', 'input', 'target', 'png', batch_size, patch_size):
         i = current_batch * batch_size
         for X, Y in zip(data[0], data[1]):
             Image.fromarray(np.array(X[:, :, 0] * 255, dtype=np.uint8)).save(RESULT_DIR + '/{:08d}_1.png'.format(i))

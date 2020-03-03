@@ -20,9 +20,9 @@ PATCH_SIZE = (256, 256)           # (height, width)
 STRIDE_SIZE = (128, 128)          # (height, width)
 IMG_SIZE = None
 
-DIR_NAME = '../neo'
-RESULT_DIR = DIR_NAME + '_caps_results_150_2'
-MODEL_PATH = 'models/segcaps-model-150-0.096660-0.946998.hdf5'
+DIR_NAME = '../retcam'
+RESULT_DIR = DIR_NAME + '_caps_results_1'
+MODEL_PATH = 'models/segcaps-rop-model-10-0.093461-0.893399.hdf5'
 
 
 input_shape=(256, 256, 1)
@@ -155,7 +155,7 @@ def main():
     for file in tqdm(files):
         image = tf.keras.preprocessing.image.load_img(file)
         image = np.asarray(image)
-        img, th = segment_vessel_capsnet(image, 0.25)
+        img, th = segment_vessel_capsnet(image, 1)
         image_name = ''.join(file.replace('\\', '/').split('/')[-1].split('.')[:-1])
         tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + '.jpg'), img)
         tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + '-th.jpg'), th)
