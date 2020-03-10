@@ -10,9 +10,9 @@ from SegCaps.custom_losses import weighted_binary_crossentropy_loss
 PATCH_SIZE = (256, 256)
 BATCH_SIZE = 1
 INPUT_SHAPE = (*PATCH_SIZE, 1)
-SAVED_MODEL_PATH = 'models/segcaps-rop-model-10-0.093461-0.893399.hdf5'
+SAVED_MODEL_PATH = 'models/segcaps-rop-2-model-10-0.113280-0.907284.hdf5'
 INITIAL_EPOCH = 10
-EPOCHS = 50
+EPOCHS = 30
 
 
 def main():
@@ -33,11 +33,11 @@ def main():
     validation_Y = np.array(validation_Y)
     mask = validation_X * validation_Y
 
-    log_dir = 'segcaps_logs_rop'
+    log_dir = 'segcaps_logs_rop_2'
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
-    mcp_save = tf.keras.callbacks.ModelCheckpoint('models/segcaps-rop-model-{epoch:02d}-{loss:.6f}-{out_seg_accuracy:0.6f}.hdf5', monitor='loss', mode='min')
+    mcp_save = tf.keras.callbacks.ModelCheckpoint('models/segcaps-rop-2-model-{epoch:02d}-{loss:.6f}-{out_seg_accuracy:0.6f}.hdf5', monitor='loss', mode='min')
 
-    train_model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-5), loss={'out_seg': weighted_binary_crossentropy_loss(4), 'out_recon': 'mse'}, metrics=['accuracy'])
+    train_model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-5), loss={'out_seg': weighted_binary_crossentropy_loss(2), 'out_recon': 'mse'}, metrics=['accuracy'])
     if os.path.isfile(SAVED_MODEL_PATH):
         train_model.load_weights(SAVED_MODEL_PATH)
         print("Weights Loaded Successfully")

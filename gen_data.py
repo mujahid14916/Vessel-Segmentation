@@ -138,7 +138,7 @@ def data_generator(dataset_root_dir, image_dir, label_dir, image_ext, batch_size
             if np.random.randint(0, 100) == 0:
                 patch_img = add_sp_noise(patch_img)
             # Can be ignored
-            if np.sum(patch_lbl) == 0 and np.random.randint(0, 100) > 0:    # 1% chance of selecting all negative sample
+            if np.sum(patch_lbl) == 0 and np.random.randint(0, 100) > 50:    # 50% chance of selecting all negative sample
                 continue
             # X.append(np.expand_dims(patch_img, axis=-1))
             # Y.append(np.expand_dims(patch_lbl, axis=-1))

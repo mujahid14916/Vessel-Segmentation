@@ -1,14 +1,13 @@
 import tensorflow as tf
-import keras
 from matplotlib import pyplot as plt
 
 image_size = (256, 256)
 Input_Shape = (*image_size, 3)
 batch_size = 16
 training_data_dir = 'dataset'
-epochs = 2000
+epochs = 200
 
-data_generator = keras.preprocessing.image.ImageDataGenerator(
+data_generator = tf.keras.preprocessing.image.ImageDataGenerator(
     brightness_range=(0.9, 1.1),
     channel_shift_range=30,
     rescale=1/255.,
@@ -33,38 +32,43 @@ validation_generator = data_generator.flow_from_directory(
     subset='validation'
 )
 
-model = keras.models.Sequential([
-    keras.layers.Conv2D(filters=32, kernel_size=(3, 3), padding='same', activation='elu', input_shape=Input_Shape),
-    keras.layers.MaxPool2D(pool_size=(2, 2)),
-    keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.MaxPool2D(pool_size=(2, 2)),
-    keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.MaxPool2D(pool_size=(2, 2)),
-    keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation='elu'),
-    keras.layers.MaxPool2D(pool_size=(2, 2)),
+model = tf.keras.models.Sequential([
+    tf.keras.layers.Conv2D(filters=32, kernel_size=(3, 3), padding='same', activation='relu', kernel_initializer = 'he_normal', input_shape=Input_Shape),
+    tf.keras.layers.MaxPool2D(pool_size=(2, 2), padding='valid'),
+    tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding='same', activation='relu', kernel_initializer = 'he_normal'),
+    tf.keras.layers.MaxPool2D(pool_size=(2, 2), padding='valid'),
+    tf.keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same', activation='relu', kernel_initializer = 'he_normal'),
+    tf.keras.layers.MaxPool2D(pool_size=(2, 2), padding='valid'),
+    tf.keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation='relu', kernel_initializer = 'he_normal'),
+    tf.keras.layers.MaxPool2D(pool_size=(2, 2), padding='valid'),
+    tf.keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation='relu', kernel_initializer = 'he_normal'),
+    tf.keras.layers.MaxPool2D(pool_size=(2, 2), padding='valid'),
+    # keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same', activation='elu'),
+    # keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same', activation='elu'),
     # keras.layers.MaxPool2D(pool_size=(2, 2)),
-    keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same', activation='relu', kernel_initializer = 'he_normal'),
-    keras.layers.MaxPool2D(pool_size=(2, 2), padding='same'),
-    keras.layers.Flatten(),
+    # keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation='elu'),
+    # keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation='elu'),
+    # keras.layers.MaxPool2D(pool_size=(2, 2)),
+    # keras.layers.MaxPool2D(pool_size=(2, 2)),
+    # keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same', activation='relu', kernel_initializer = 'he_normal'),
+    # keras.layers.MaxPool2D(pool_size=(2, 2), padding='same'),
+    tf.keras.layers.Flatten(),
     # keras.layers.Dropout(rate=0.5),
-    keras.layers.Dense(100, activation='relu'),
-    keras.layers.Dropout(rate=0.5),
-    keras.layers.Dense(1, activation='sigmoid'),
+    tf.keras.layers.Dense(100, activation='relu'),
+    tf.keras.layers.Dropout(rate=0.5),
+    tf.keras.layers.Dense(1, activation='sigmoid'),
 ])
 
-model.load_weights('weights-1723-0.0019-0.9987-0.0436-0.9451.hdf5')
+# model.load_weights('weights-1723-0.0019-0.9987-0.0436-0.9451.hdf5')
 
 model.summary()
 model.compile(
-    optimizer=keras.optimizers.Adam(learning_rate=1e-5), 
-    loss=keras.losses.binary_crossentropy,
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), 
+    loss=tf.keras.losses.binary_crossentropy,
     metrics=['accuracy']
 )
-save_model_callback = keras.callbacks.ModelCheckpoint(
-    filepath='weights-{epoch:04d}-{loss:.4f}-{accuracy:.4f}-{val_loss:.4f}-{val_accuracy:.4f}.hdf5', 
+save_model_callback = tf.keras.callbacks.ModelCheckpoint(
+    filepath='weights-shallow-{epoch:04d}-{loss:.4f}-{accuracy:.4f}-{val_loss:.4f}-{val_accuracy:.4f}.hdf5', 
     monitor='val_accuracy', 
     save_best_only=True,
     period=1
@@ -92,7 +96,7 @@ plt.title('Model Accuracy')
 plt.ylabel('Accuracy')
 plt.xlabel('Epoch')
 plt.legend(['Train', 'Test'], loc='upper left')
-plt.savefig('train_acc.png', dpi=300)
+plt.savefig('train_acc-shw2.png', dpi=300)
 plt.clf()
 
 # Plot training & validation loss values
@@ -102,4 +106,4 @@ plt.title('Model Loss')
 plt.ylabel('Loss')
 plt.xlabel('Epoch')
 plt.legend(['Train', 'Test'], loc='upper left')
-plt.savefig('train_loss.png', dpi=300)
+plt.savefig('train_loss-shw2.png', dpi=300)

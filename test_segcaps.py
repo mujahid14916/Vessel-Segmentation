@@ -21,8 +21,8 @@ STRIDE_SIZE = (128, 128)          # (height, width)
 IMG_SIZE = None
 
 DIR_NAME = '../retcam'
-RESULT_DIR = DIR_NAME + '_caps_results_1'
-MODEL_PATH = 'models/segcaps-rop-model-10-0.093461-0.893399.hdf5'
+RESULT_DIR = DIR_NAME + '_caps_results_2_30'
+MODEL_PATH = 'models/segcaps-rop-2-model-30-0.057898-0.914384.hdf5'
 
 
 input_shape=(256, 256, 1)
@@ -155,25 +155,41 @@ def main():
     for file in tqdm(files):
         image = tf.keras.preprocessing.image.load_img(file)
         image = np.asarray(image)
-        img, th = segment_vessel_capsnet(image, 1)
+        img, th = segment_vessel_capsnet(image, 1, 150)
+        res = np.array(img, dtype=np.float64)
+        res_th = np.array(th, dtype=np.float64)
         image_name = ''.join(file.replace('\\', '/').split('/')[-1].split('.')[:-1])
-        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + '.jpg'), img)
-        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + '-th.jpg'), th)
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx.jpg'), img)
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-th.jpg'), th)
         
     # print("Horizontal Flip")
-    # img, th = segment_vessel_capsnet(image[:, ::-1, ...])
-    # # tf.keras.preprocessing.image.save_img('../retcam_caps_results_22/1.png', image)
-    # tf.keras.preprocessing.image.save_img('../2.png', th)
+        img, th = segment_vessel_capsnet(image[:, ::-1, ...], 1, 150)
+        res += img[:, ::-1, ...]
+        res_th += th[:, ::-1, ...]
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-h.jpg'), img)
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-h-th.jpg'), th)
     
     # print("Vertical Flip")
-    # img, th = segment_vessel_capsnet(image[::-1, :, ...])
-    # # tf.keras.preprocessing.image.save_img('../retcam_caps_results_22/1.png', image)
-    # tf.keras.preprocessing.image.save_img('../3.png', th)
+        img, th = segment_vessel_capsnet(image[::-1, :, ...], 1, 150)
+        res += img[::-1, :, ...]
+        res_th += th[::-1, :, ...]
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-v.jpg'), img)
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-v-th.jpg'), th)
     
     # print("Horizontal & Vertical Flip")
-    # img, th = segment_vessel_capsnet(image[::-1, ::-1, ...])
-    # # tf.keras.preprocessing.image.save_img('../retcam_caps_results_22/1.png', image)
-    # tf.keras.preprocessing.image.save_img('../4.png', th)
+        img, th = segment_vessel_capsnet(image[::-1, ::-1, ...], 1, 150)
+        res += img[::-1, ::-1, ...]
+        res_th += th[::-1, ::-1, ...]
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-hv.jpg'), img)
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-hv-th.jpg'), th)
+        
+        res = np.array(np.clip(res*255, 0, 255), dtype=np.uint8)
+        res_th = np.array(np.clip(res_th*255, 0, 255), dtype=np.uint8)
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-combined.jpg'), res)
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-combined-th.jpg'), res_th)
+        res_th[res_th < 100] = 0
+        res_th[res_th >= 100] = 255
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-combined-res-th.jpg'), res_th)
 
 
 if __name__ == '__main__':

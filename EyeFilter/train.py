@@ -61,18 +61,20 @@ model.compile(
     loss=tf.keras.losses.binary_crossentropy,
     metrics=['accuracy']
 )
+log_dir = 'eye_filter_logs2'
+tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 save_model_callback = tf.keras.callbacks.ModelCheckpoint(
     filepath='weights-{epoch:04d}-{loss:.4f}-{accuracy:.4f}-{val_loss:.4f}-{val_accuracy:.4f}.hdf5', 
     monitor='val_loss', 
-    save_best_only=True,
+    # save_best_only=True,
     period=1
 )
 
-history = model.fit_generator(
-    generator=train_generator,
+history = model.fit(
+    train_generator,
     steps_per_epoch=train_generator.samples // batch_size,
     epochs=epochs,
-    callbacks=[save_model_callback],
+    callbacks=[save_model_callback, tensorboard_callback],
     validation_data=[val_X, val_Y],
     class_weight={0: 0.8, 1: 0.2}
 )
