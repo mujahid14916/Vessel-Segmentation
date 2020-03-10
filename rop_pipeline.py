@@ -3,9 +3,14 @@ import tensorflow as tf
 import numpy as np
 from EyeClassification import classifier as eye_classifier, helper_utils
 from EyeFilter import classifier as eye_filter
+from test_segcaps import segment_vessel_capsnet
+import os
 
 
 files = glob('../retcam/*.png')
+result_dir = 'result'
+if not os.path.isdir(result_dir):
+    os.mkdir(result_dir)
 
 files_dict = {}
 
@@ -40,7 +45,7 @@ for key in files_dict:
     files_dict[key] = valid
 
     images = np.array(images)
-    print(images.shape)
+    # print(images.shape)
     # Eye Position
     classes = eye_classifier.classify(images)
     print(classes)
@@ -60,8 +65,8 @@ for key in files_dict:
             left_mapping.append(i)
     left = np.array(left)
     right = np.array(right)
-    print(left.shape)
-    print(right.shape)
+    # print(left.shape)
+    # print(right.shape)
 
 
     # Filter Bad Eye
@@ -75,5 +80,24 @@ for key in files_dict:
     for v in valid_left:
         if v == 0 and v in left_mapping:
             left_mapping.remove(v)
+    
+    patient_dir = os.path.join(result_dir, key)
+    od_dir = os.path.join(patient_dir, 'OD')
+    os_dir = os.path.join(patient_dir, 'OS')
+    if not os.path.isdir(patient_dir):
+        os.mkdir(patient_dir)
+    if not os.path.isdir(od_dir):
+        os.mkdir(od_dir)
+    if not os.path.isdir(os_dir):
+        os.mkdir(os_dir)
 
     # Get Vessel Segment
+    for idx in left_mapping:
+        img, th = segment_vessel_capsnet(images[idx])
+        tf.keras.preprocessing.image.save_img(os.path.join(os_dir, files_dict[key][idx]['name']) + '.jpg', th)
+    
+    for idx in right_mapping:
+        img, th = segment_vessel_capsnet(images[idx])
+        tf.keras.preprocessing.image.save_img(os.path.join(od_dir, files_dict[key][idx]['name']) + '.jpg', th)
+
+    exit()
