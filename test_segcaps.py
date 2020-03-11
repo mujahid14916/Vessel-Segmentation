@@ -13,6 +13,7 @@ from SegCaps.capsnet import CapsNetR3
 from SegCaps.capsule_layers import ConvCapsuleLayer, Length, Mask, DeconvCapsuleLayer
 import tensorflow as tf
 from tqdm import tqdm
+from scipy import ndimage
 
 
 IMAGE_RESIZE_PER = 1         # Resize Percentage
@@ -39,6 +40,31 @@ for test_layer in test_model.layers:
     for train_layer in model.layers:
         if train_layer.name == test_layer.name:
             test_layer.set_weights(train_layer.get_weights())
+
+
+def rotate_image(image, deg=45):
+    return ndimage.rotate(np.asarray(img), deg, reshape=True)
+
+
+def undo_rotate_image(image, deg=45, shape=None):
+    # TODO: Fix for degree greater than 80
+    if shape is None:
+        pi_factor = np.pi/180
+        try:
+            a = np.array([[np.sin((90 - deg)*pi_factor), np.sin(deg*pi_factor)], 
+                        [np.cos((90 - deg)*pi_factor), np.cos(deg*pi_factor)]])
+            a = np.abs(a)
+            r = np.array([[image.shape[0]], [image.shape[1]]])
+            img_height, img_width = np.array(np.squeeze(np.matmul(np.linalg.inv(a), r)), dtype=np.int)
+        except:
+            raise ValueError("Shape Cannot be determined, please provide shape parameter")
+    else:
+        img_height, img_width = shape[:2]
+    print(img_height, img_width)
+    rotated_image = ndimage.rotate(image, -deg, reshape=False)
+    h = abs(rotated_image.shape[0] - img_height)//2
+    w = abs(rotated_image.shape[1] - img_width)//2
+    return rotated_image[h:h+img_height, w:w+img_width]
 
 
 def segment_vessel_capsnet(image, image_scale_percentage=1, th_value=150):
@@ -183,13 +209,34 @@ def main():
         tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-hv.jpg'), img)
         tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-hv-th.jpg'), th)
         
+    # print("Rotate by 30 deg")
+        deg = 30
+        img, th = segment_vessel_capsnet(rotate_image(image, deg=deg), 1, 150)
+        res += undo_rotate_image(img, deg=deg, shape=image.shape)
+        res_th += undo_rotate_image(th, deg=deg, shape=image.shape)
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-30.jpg'), img)
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-30-th.jpg'), th)
+        
+    # print("Rotate by 45 deg")
+        deg = 45
+        img, th = segment_vessel_capsnet(rotate_image(image, deg=deg), 1, 150)
+        res += undo_rotate_image(img, deg=deg, shape=image.shape)
+        res_th += undo_rotate_image(th, deg=deg, shape=image.shape)
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-45.jpg'), img)
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-45-th.jpg'), th)
+        
+    # print("Rotate by 60 deg")
+        deg = 60
+        img, th = segment_vessel_capsnet(rotate_image(image, deg=deg), 1, 150)
+        res += undo_rotate_image(img, deg=deg, shape=image.shape)
+        res_th += undo_rotate_image(th, deg=deg, shape=image.shape)
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-60.jpg'), img)
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-60-th.jpg'), th)
+        
         res = np.array(np.clip(res*255, 0, 255), dtype=np.uint8)
         res_th = np.array(np.clip(res_th*255, 0, 255), dtype=np.uint8)
         tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-combined.jpg'), res)
         tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-combined-th.jpg'), res_th)
-        res_th[res_th < 100] = 0
-        res_th[res_th >= 100] = 255
-        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-combined-res-th.jpg'), res_th)
 
 
 if __name__ == '__main__':
