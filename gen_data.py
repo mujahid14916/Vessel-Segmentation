@@ -5,16 +5,13 @@ import os
 import cv2
 from PIL import Image
 from tqdm import tqdm
-from keras.preprocessing.image import *
+import tensorflow as tf
 
 
 PATCH_SIZE = (256, 256)       # (height, width)
 TOTAL_PATCHES = 500
 # IMG_MAX_HEIGHT = 800
 # IMG_MIN_HEIGHT = 500
-RESULT_DIR = '../Corrected/val/patches'
-if not os.path.isdir(RESULT_DIR):
-    os.mkdir(RESULT_DIR)
 
 
 def add_sp_noise(img):  # Salt Pepper noise
@@ -104,30 +101,30 @@ def data_generator(dataset_root_dir, image_dir, label_dir, image_ext, batch_size
             #     img_and_mask[:, :, 1:] = patch_lbl[:patch_size[0], :patch_size[1], ...]
 
             if np.random.randint(0, 100) == 0:
-                img_and_mask = random_zoom(
+                img_and_mask = tf.keras.preprocessing.image.random_zoom(
                     img_and_mask, zoom_range=(0.7, 1.3),
                     row_axis=0, col_axis=1, channel_axis=2,
                     fill_mode='constant', cval=0.0
                 )
             if np.random.randint(0, 1000) == 0:
-                img_and_mask = random_shift(        # very low prob
+                img_and_mask = tf.keras.preprocessing.image.random_shift(        # very low prob
                     img_and_mask, wrg=1.5, hrg=1.5,
                     row_axis=0, col_axis=1, channel_axis=2,
                     fill_mode='constant', cval=0.0,
                 )
             if np.random.randint(0, 100) == 0:
-                img_and_mask = random_rotation(
+                img_and_mask = tf.keras.preprocessing.image.random_rotation(
                     img_and_mask, rg=45,
                     row_axis=0, col_axis=1, channel_axis=2,
                     fill_mode='constant', cval=0.0
                 )
             if np.random.randint(0, 100) == 0:
-                img_and_mask[:, :, :1] = random_brightness(
+                img_and_mask[:, :, :1] = tf.keras.preprocessing.image.random_brightness(
                     patch_img,
                     brightness_range=(0.8, 1.1)
                 )/255
             if np.random.randint(0, 100) == 0:
-                img_and_mask = random_shear(
+                img_and_mask = tf.keras.preprocessing.image.random_shear(
                     img_and_mask, intensity = 45,
                     row_axis=0, col_axis=1, channel_axis=2,
                     fill_mode='constant', cval=0.0,
@@ -162,16 +159,25 @@ def full_image_generator(dataset_root_dir, image_dir, label_dir, image_ext, batc
     for file in files:
         img = np.asarray(Image.open(file))
         lbl = np.asarray(Image.open(file.replace(image_dir, label_dir)))
-        img = cv2.resize(img, dsize=(image_size[1], image_size[0]))
-        lbl = cv2.resize(lbl, dsize=(image_size[1], image_size[0]))
+        if len(lbl.shape) == 3:
+            lbl = lbl[:, :, 0]
+        img = square_frame(img)
+        lbl = square_frame(lbl)
         if np.max(img) > 1:
             data_img = np.array(img / 255, dtype=np.float32)
         if np.max(lbl) > 1:
             data_lbl = np.array(lbl / 255, dtype=np.float32)
         if len(data_img.shape) == 2:
             data_img = np.expand_dims(data_img, axis=-1)
+        else:
+            data_img = data_img[:, :, :1]
         if len(data_lbl.shape) == 2:
             data_lbl = np.expand_dims(data_lbl, axis=-1)
+        else:
+            data_lbl = data_lbl[:, :, :1]
+        res_img = np.zeros((*image_size, 1))
+        res_lbl = np.zeros((*image_size, 1))
+
         images.append(data_img)
         labels.append(data_lbl)
 
@@ -201,10 +207,10 @@ def full_image_generator(dataset_root_dir, image_dir, label_dir, image_ext, batc
             patch_lbl = np.copy(label)
             img_and_mask = np.concatenate((patch_img, patch_lbl), axis=2)
             # Horizontal Flipping
-            if np.random.randint(0, 100) == 0:
+            if np.random.randint(0, 10) == 0:
                 img_and_mask = img_and_mask[:, ::-1, ...]
             # Vertical Flipping
-            if np.random.randint(0, 100) == 0:
+            if np.random.randint(0, 10) == 0:
                 img_and_mask = img_and_mask[::-1, :, ...]
             # # Patch Stretching
             # if np.random.randint(0, 100) == 0:
@@ -224,45 +230,49 @@ def full_image_generator(dataset_root_dir, image_dir, label_dir, image_ext, batc
             #     img_and_mask[:, :, :1] = patch_img[:patch_size[0], :patch_size[1], ...]
             #     img_and_mask[:, :, 1:] = patch_lbl[:patch_size[0], :patch_size[1], ...]
 
-            if np.random.randint(0, 100) == 0:
-                img_and_mask = random_zoom(
+            if np.random.randint(0, 10) == 0:
+                img_and_mask = tf.keras.preprocessing.image.random_zoom(
                     img_and_mask, zoom_range=(0.7, 1.3),
                     row_axis=0, col_axis=1, channel_axis=2,
                     fill_mode='constant', cval=0.0
                 )
-            if np.random.randint(0, 1000) == 0:
-                img_and_mask = random_shift(        # very low prob
+            if np.random.randint(0, 100) == 0:
+                img_and_mask = tf.keras.preprocessing.image.random_shift(        # very low prob
                     img_and_mask, wrg=1.5, hrg=1.5,
                     row_axis=0, col_axis=1, channel_axis=2,
                     fill_mode='constant', cval=0.0,
                 )
-            if np.random.randint(0, 100) == 0:
-                img_and_mask = random_rotation(
-                    img_and_mask, rg=45,
+            if np.random.randint(0, 10) == 0:
+                img_and_mask = tf.keras.preprocessing.image.random_rotation(
+                    img_and_mask, rg=180,
                     row_axis=0, col_axis=1, channel_axis=2,
                     fill_mode='constant', cval=0.0
                 )
-            if np.random.randint(0, 100) == 0:
-                img_and_mask[:, :, :1] = random_brightness(
+            if np.random.randint(0, 10) == 0:
+                img_and_mask[:, :, :1] = tf.keras.preprocessing.image.random_brightness(
                     patch_img,
                     brightness_range=(0.8, 1.1)
                 )/255
             if np.random.randint(0, 100) == 0:
-                img_and_mask = random_shear(
-                    img_and_mask, intensity = 45,
+                img_and_mask = tf.keras.preprocessing.image.random_shear(
+                    img_and_mask, intensity = 60,
                     row_axis=0, col_axis=1, channel_axis=2,
                     fill_mode='constant', cval=0.0,
                 )
 
             patch_img = img_and_mask[:, :, :1]
             patch_lbl = img_and_mask[:, :, 1:]
-            if np.random.randint(0, 100) == 0:
+            if np.random.randint(0, 50) == 0:
                 patch_img = add_sp_noise(patch_img)
             # Can be ignored
-            if np.sum(patch_lbl) == 0 and np.random.randint(0, 100) > 0:    # 1% chance of selecting all negative sample
+            if np.sum(patch_lbl) == 0 and np.random.randint(0, 100) > 50:    # 50% chance of selecting all negative sample
                 continue
             # X.append(np.expand_dims(patch_img, axis=-1))
             # Y.append(np.expand_dims(patch_lbl, axis=-1))
+            patch_img = np.expand_dims(cv2.resize(patch_img, dsize=(image_size[1], image_size[0])), axis=-1)
+            patch_lbl = np.expand_dims(cv2.resize(patch_lbl, dsize=(image_size[1], image_size[0])), axis=-1)
+            # patch_img = tf.image.resize(patch_img, image_size).numpy()
+            # patch_lbl = tf.image.resize(patch_lbl, image_size).numpy()
             X.append(patch_img)
             Y.append(patch_lbl)
             # k += 1
@@ -274,15 +284,34 @@ def full_image_generator(dataset_root_dir, image_dir, label_dir, image_ext, batc
 
             yield np.array(X), np.array(Y)
 
+def square_frame(img):
+    h, w = img.shape[:2]
+    if h != w:
+        max_size = max(h, w)
+        target_shape = [max_size, max_size]
+        if len(img.shape) == 3:
+            target_shape.append(img.shape[2])
+        tmp_img = np.zeros(target_shape)
+        diff = np.abs((h - w)//2)
+        if h > w:
+            tmp_img[:, diff:diff+w] = img
+        else:
+            tmp_img[diff:diff+h, :] = img
+        img = tmp_img
+    return img
+
 
 def main():
     current_batch = 0
     total_batches = 10
     batch_size = 32
-    patch_size = (256, 256)
+    patch_size = (512, 512)
     pbar = tqdm(total=total_batches * batch_size, desc='Progress')
     i = 0
-    for data in data_generator('../Corrected/val', 'input', 'target', 'png', batch_size, patch_size):
+    RESULT_DIR = 'testing_dataset/patches'
+    if not os.path.isdir(RESULT_DIR):
+        os.mkdir(RESULT_DIR)
+    for data in full_image_generator('testing_dataset', 'pre-processed', 'label-1', 'png', batch_size, patch_size):
         i = current_batch * batch_size
         for X, Y in zip(data[0], data[1]):
             Image.fromarray(np.array(X[:, :, 0] * 255, dtype=np.uint8)).save(RESULT_DIR + '/{:08d}_1.png'.format(i))
