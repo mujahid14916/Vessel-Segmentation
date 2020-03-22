@@ -6,4 +6,5 @@ training_dataset/patches/
 EyeClassification/neoDataSet*
 EyeClassification/predict*
 EyeFilter/dataset*
-*.png
+EyeClassification/dataset*
+testing_dataset/patches*

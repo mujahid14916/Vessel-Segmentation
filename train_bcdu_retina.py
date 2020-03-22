@@ -11,7 +11,7 @@ from keras.callbacks import ModelCheckpoint, TensorBoard,ReduceLROnPlateau
 from keras import callbacks
 from time import time
 import pickle
-from gen_data import data_generator
+from patch_generator import data_generator
 
 
 PATCH_SIZE = (128, 128)

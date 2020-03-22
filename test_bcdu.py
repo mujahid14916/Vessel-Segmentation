@@ -2,10 +2,10 @@ from glob import glob
 from pprint import pprint as pp
 from PIL import Image
 import numpy as np
-from gen_preprocess_data import pre_process_image
-from gen_preprocess_data import extract_ordered_overlap
-from gen_preprocess_data import paint_border_overlap
-from gen_preprocess_data import recompone_overlap
+from pre_process import pre_process_image
+from pre_process import extract_ordered_overlap
+from pre_process import paint_border_overlap
+from pre_process import recompone_overlap
 import BCDU.models as M
 import os
 import tensorflow as tf
@@ -14,12 +14,12 @@ from scipy import ndimage
 import cv2
 
 
-IMAGE_RESIZE_PER = 1         # Resize Percentage
+IMAGE_RESIZE_PER = 0.25         # Resize Percentage
 PATCH_SIZE = (128, 128)           # (height, width)
 STRIDE_SIZE = (64, 64)          # (height, width)
 IMG_SIZE = None
 
-DIR_NAME = '../retcam'
+DIR_NAME = '../neo'
 RESULT_DIR = DIR_NAME + '_40_bcdu_rotation'
 MODEL_PATH = 'models/bcdu_weight_dice-45-0.920427.hdf5'
 
@@ -87,7 +87,7 @@ def main():
     files = glob(DIR_NAME + '/*.png')
     if not os.path.isdir(RESULT_DIR):
         os.mkdir(RESULT_DIR)
-    for file in tqdm(files):
+    for file in tqdm(files[775:]):
         image = tf.keras.preprocessing.image.load_img(file)
         image = np.asarray(image)
         img, th = segment_vessel_bcdu(image, IMAGE_RESIZE_PER, 150)
@@ -103,21 +103,21 @@ def main():
         res += img[:, ::-1, ...]
         res_th += th[:, ::-1, ...]
         # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-h.jpg'), img[:, ::-1, ...])
-        # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-h-th.jpg'), th[:, ::-1, ...])
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-h-th.jpg'), th[:, ::-1, ...])
     
     # print("Vertical Flip")
         img, th = segment_vessel_bcdu(image[::-1, :, ...], IMAGE_RESIZE_PER, 150)
         res += img[::-1, :, ...]
         res_th += th[::-1, :, ...]
         # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-v.jpg'), img[::-1, :, ...])
-        # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-v-th.jpg'), th[::-1, :, ...])
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-v-th.jpg'), th[::-1, :, ...])
     
     # print("Horizontal & Vertical Flip")
         img, th = segment_vessel_bcdu(image[::-1, ::-1, ...], IMAGE_RESIZE_PER, 150)
         res += img[::-1, ::-1, ...]
         res_th += th[::-1, ::-1, ...]
         # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-hv.jpg'), img[::-1, ::-1, ...])
-        # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-hv-th.jpg'), th[::-1, ::-1, ...])
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-hv-th.jpg'), th[::-1, ::-1, ...])
         
     # print("Rotate by 30 deg")
         deg = 30
@@ -131,7 +131,7 @@ def main():
         res += r
         res_th += t
         # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-30.jpg'), r)
-        # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-30-th.jpg'), t)
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-30-th.jpg'), t)
         
     # print("Rotate by 45 deg")
         deg = 45
@@ -145,7 +145,7 @@ def main():
         res += r
         res_th += t
         # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-45.jpg'), r)
-        # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-45-th.jpg'), t)
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-45-th.jpg'), t)
         
     # print("Rotate by 60 deg")
         deg = 60
@@ -159,7 +159,7 @@ def main():
         res += r
         res_th += t
         # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-60.jpg'), r)
-        # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-60-th.jpg'), t)
+        tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-60-th.jpg'), t)
         
         res = np.array(np.clip(res*255, 0, 255), dtype=np.uint8)
         res_th = np.array(np.clip(res_th*255, 0, 255), dtype=np.uint8)

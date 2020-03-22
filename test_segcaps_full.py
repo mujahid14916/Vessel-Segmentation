@@ -2,10 +2,10 @@ from glob import glob
 from pprint import pprint as pp
 from PIL import Image
 import numpy as np
-from gen_preprocess_data import pre_process_image
-from gen_preprocess_data import extract_ordered_overlap
-from gen_preprocess_data import paint_border_overlap
-from gen_preprocess_data import recompone_overlap
+from pre_process import pre_process_image
+from pre_process import extract_ordered_overlap
+from pre_process import paint_border_overlap
+from pre_process import recompone_overlap
 from matplotlib import pyplot as plt
 import os
 import cv2
@@ -14,7 +14,7 @@ from SegCaps.capsule_layers import ConvCapsuleLayer, Length, Mask, DeconvCapsule
 import tensorflow as tf
 from tqdm import tqdm
 from scipy import ndimage
-from gen_data import square_frame
+from patch_generator import square_frame
 
 
 IMAGE_RESIZE_PER = 1         # Resize Percentage
@@ -22,7 +22,7 @@ PATCH_SIZE = (256, 256)           # (height, width)
 STRIDE_SIZE = (128, 128)          # (height, width)
 IMG_SIZE = None
 
-DIR_NAME = '../retcam'
+DIR_NAME = '../neo'
 RESULT_DIR = DIR_NAME + '_caps_results_full_150'
 MODEL_PATH = 'models/segcaps-full-model-150-0.162590-0.890193.hdf5'
 

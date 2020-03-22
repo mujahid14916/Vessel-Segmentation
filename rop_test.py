@@ -2,10 +2,10 @@ from glob import glob
 from pprint import pprint as pp
 from PIL import Image
 import numpy as np
-from gen_preprocess_data import pre_process_image
-from gen_preprocess_data import extract_ordered_overlap
-from gen_preprocess_data import paint_border_overlap
-from gen_preprocess_data import recompone_overlap
+from pre_process import pre_process_image
+from pre_process import extract_ordered_overlap
+from pre_process import paint_border_overlap
+from pre_process import recompone_overlap
 import BCDU.models as M
 from matplotlib import pyplot as plt
 import os

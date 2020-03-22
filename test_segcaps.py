@@ -2,10 +2,10 @@ from glob import glob
 from pprint import pprint as pp
 from PIL import Image
 import numpy as np
-from gen_preprocess_data import pre_process_image
-from gen_preprocess_data import extract_ordered_overlap
-from gen_preprocess_data import paint_border_overlap
-from gen_preprocess_data import recompone_overlap
+from pre_process import pre_process_image
+from pre_process import extract_ordered_overlap
+from pre_process import paint_border_overlap
+from pre_process import recompone_overlap
 from matplotlib import pyplot as plt
 import os
 import cv2
@@ -22,7 +22,7 @@ STRIDE_SIZE = (128, 128)          # (height, width)
 IMG_SIZE = None
 
 DIR_NAME = '../neo'
-RESULT_DIR = DIR_NAME + '_caps_results_2_30-rotation'
+RESULT_DIR = DIR_NAME + '_caps_results_2_30'
 MODEL_PATH = 'models/segcaps-rop-2-model-30-0.057898-0.914384.hdf5'
 
 
@@ -102,7 +102,7 @@ def main():
     files = glob(DIR_NAME + '/*.png')
     if not os.path.isdir(RESULT_DIR):
         os.mkdir(RESULT_DIR)
-    for file in tqdm(files[820:]):
+    for file in tqdm(files[:820]):
         image = tf.keras.preprocessing.image.load_img(file)
         image = np.asarray(image)
         img, th = segment_vessel_capsnet(image, IMAGE_RESIZE_PER, 150)
@@ -135,44 +135,44 @@ def main():
         # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-hv-th.jpg'), th[::-1, ::-1, ...])
         
     # print("Rotate by 30 deg")
-        deg = 30
-        img, th = segment_vessel_capsnet(rotate_image(image, deg=deg), IMAGE_RESIZE_PER, 150)
-        r = undo_rotate_image(img, deg=deg, shape=(h, w))
-        r[r > 1] = 1
-        r[r < 0] = 0
-        t = undo_rotate_image(th, deg=deg, shape=(h, w))
-        t[t > 1] = 1
-        t[t < 0] = 0
-        res += r
-        res_th += t
+        # deg = 30
+        # img, th = segment_vessel_capsnet(rotate_image(image, deg=deg), IMAGE_RESIZE_PER, 150)
+        # r = undo_rotate_image(img, deg=deg, shape=(h, w))
+        # r[r > 1] = 1
+        # r[r < 0] = 0
+        # t = undo_rotate_image(th, deg=deg, shape=(h, w))
+        # t[t > 1] = 1
+        # t[t < 0] = 0
+        # res += r
+        # res_th += t
         # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-30.jpg'), r)
         # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-30-th.jpg'), t)
         
     # print("Rotate by 45 deg")
-        deg = 45
-        img, th = segment_vessel_capsnet(rotate_image(image, deg=deg), IMAGE_RESIZE_PER, 150)
-        r = undo_rotate_image(img, deg=deg, shape=(h, w))
-        r[r > 1] = 1
-        r[r < 0] = 0
-        t = undo_rotate_image(th, deg=deg, shape=(h, w))
-        t[t > 1] = 1
-        t[t < 0] = 0
-        res += r
-        res_th += t
+        # deg = 45
+        # img, th = segment_vessel_capsnet(rotate_image(image, deg=deg), IMAGE_RESIZE_PER, 150)
+        # r = undo_rotate_image(img, deg=deg, shape=(h, w))
+        # r[r > 1] = 1
+        # r[r < 0] = 0
+        # t = undo_rotate_image(th, deg=deg, shape=(h, w))
+        # t[t > 1] = 1
+        # t[t < 0] = 0
+        # res += r
+        # res_th += t
         # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-45.jpg'), r)
         # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-45-th.jpg'), t)
         
     # print("Rotate by 60 deg")
-        deg = 60
-        img, th = segment_vessel_capsnet(rotate_image(image, deg=deg), IMAGE_RESIZE_PER, 150)
-        r = undo_rotate_image(img, deg=deg, shape=(h, w))
-        r[r > 1] = 1
-        r[r < 0] = 0
-        t = undo_rotate_image(th, deg=deg, shape=(h, w))
-        t[t > 1] = 1
-        t[t < 0] = 0
-        res += r
-        res_th += t
+        # deg = 60
+        # img, th = segment_vessel_capsnet(rotate_image(image, deg=deg), IMAGE_RESIZE_PER, 150)
+        # r = undo_rotate_image(img, deg=deg, shape=(h, w))
+        # r[r > 1] = 1
+        # r[r < 0] = 0
+        # t = undo_rotate_image(th, deg=deg, shape=(h, w))
+        # t[t > 1] = 1
+        # t[t < 0] = 0
+        # res += r
+        # res_th += t
         # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-60.jpg'), r)
         # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-deg-60-th.jpg'), t)
         
