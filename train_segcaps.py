@@ -37,7 +37,7 @@ def main():
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
     mcp_save = tf.keras.callbacks.ModelCheckpoint('models/segcaps-multi-channel-model-{epoch:02d}-{loss:.6f}-{out_seg_accuracy:0.6f}.hdf5', monitor='loss', mode='min')
 
-    train_model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3, loss={'out_seg': weighted_binary_crossentropy_loss(4), 'out_recon': 'mse'}, metrics=['accuracy'])
+    train_model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3), loss={'out_seg': weighted_binary_crossentropy_loss(4), 'out_recon': 'mse'}, metrics=['accuracy'])
     if os.path.isfile(SAVED_MODEL_PATH):
         try:
             train_model.load_weights(SAVED_MODEL_PATH)
