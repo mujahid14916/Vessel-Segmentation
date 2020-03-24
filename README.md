@@ -16,3 +16,6 @@ Retinal Vessel Segmentation
 - Run **python pre_process.py** to generate input training data
 - Run **python patch_generator.py** to generate validation patches
 - Run **python train_segcaps.py** to start training process (change parameters acccordingly)
+
+## Inference
+- Run **python test_segcaps.py** to infer results (Update input image directory)
