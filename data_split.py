@@ -2,7 +2,6 @@ import os
 from glob import glob
 import shutil
 from PIL import Image
-from matplotlib import pyplot as plt
 import numpy as np
 import cv2
 
@@ -19,35 +18,21 @@ testing_label_1_dir = testing_dir + '/label-1'
 testing_label_2_dir = testing_dir + '/label-2'
 
 
-if not os.path.isdir(training_dir):
-    os.mkdir(training_dir)
+if os.path.isdir(training_dir):
+    shutil.rmtree(training_dir)
+if os.path.isdir(testing_dir):
+    shutil.rmtree(testing_dir)
 
-if not os.path.isdir(training_input_dir):
-    os.mkdir(training_input_dir)
-
-if not os.path.isdir(testing_dir):
-    os.mkdir(testing_dir)
-
-if not os.path.isdir(testing_input_dir):
-    os.mkdir(testing_input_dir)
-
-if not os.path.isdir(training_processed_dir):
-    os.mkdir(training_processed_dir)
-
-if not os.path.isdir(testing_processed_dir):
-    os.mkdir(testing_processed_dir)
-
-if not os.path.isdir(training_label_1_dir):
-    os.mkdir(training_label_1_dir)
-
-if not os.path.isdir(training_label_2_dir):
-    os.mkdir(training_label_2_dir)
-
-if not os.path.isdir(testing_label_1_dir):
-    os.mkdir(testing_label_1_dir)
-
-if not os.path.isdir(testing_label_2_dir):
-    os.mkdir(testing_label_2_dir)
+os.mkdir(training_dir)
+os.mkdir(training_input_dir)
+os.mkdir(testing_dir)
+os.mkdir(testing_input_dir)
+os.mkdir(training_processed_dir)
+os.mkdir(testing_processed_dir)
+os.mkdir(training_label_1_dir)
+os.mkdir(training_label_2_dir)
+os.mkdir(testing_label_1_dir)
+os.mkdir(testing_label_2_dir)
 
 TEST_SPLIT = 0.2
 MIN_TEST_SIZE = 5
