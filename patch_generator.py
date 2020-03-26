@@ -284,10 +284,10 @@ def main():
     patch_size = (256, 256)
     pbar = tqdm(total=total_batches * batch_size, desc='Progress')
     i = 0
-    RESULT_DIR = 'testing_dataset/patches'
+    RESULT_DIR = '../Corrected/val/patches'
     if not os.path.isdir(RESULT_DIR):
         os.mkdir(RESULT_DIR)
-    for data in data_generator('testing_dataset', 'input', 'label-1', 'png', batch_size, patch_size, preprocess=True, data_aug=True):
+    for data in data_generator('../Corrected/val', 'input', 'label', 'png', batch_size, patch_size, preprocess=True, data_aug=True):
         i = current_batch * batch_size
         for X, Y in zip(data[0], data[1]):
             if X.shape[2] == 1:
