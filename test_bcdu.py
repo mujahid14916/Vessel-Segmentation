@@ -14,14 +14,14 @@ from scipy import ndimage
 import cv2
 
 
-IMAGE_RESIZE_PER = 0.25         # Resize Percentage
+IMAGE_RESIZE_PER = 1         # Resize Percentage
 PATCH_SIZE = (128, 128)           # (height, width)
 STRIDE_SIZE = (64, 64)          # (height, width)
 IMG_SIZE = None
 
-DIR_NAME = '../neo'
-RESULT_DIR = DIR_NAME + '_40_bcdu_rotation'
-MODEL_PATH = 'models/bcdu_weight_dice-45-0.920427.hdf5'
+DIR_NAME = '../retcam'
+RESULT_DIR = DIR_NAME + '_authors_bcdu_rotation'
+MODEL_PATH = 'models/bcdu_authors_weight.hdf5'
 
 
 model = M.BCDU_net_D3(input_size = (*PATCH_SIZE, 1))
@@ -87,7 +87,7 @@ def main():
     files = glob(DIR_NAME + '/*.png')
     if not os.path.isdir(RESULT_DIR):
         os.mkdir(RESULT_DIR)
-    for file in tqdm(files[775:]):
+    for file in tqdm(files):
         image = tf.keras.preprocessing.image.load_img(file)
         image = np.asarray(image)
         img, th = segment_vessel_bcdu(image, IMAGE_RESIZE_PER, 150)

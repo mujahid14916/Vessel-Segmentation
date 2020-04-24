@@ -8,3 +8,11 @@ EyeClassification/predict*
 EyeFilter/dataset*
 EyeClassification/dataset*
 testing_dataset/patches*
+EyeClassification/result/*
+Dataset/HRF/*
+training_dataset/input/HRF*
+testing_dataset/input/HRF*
+training_dataset/label-1/HRF*
+testing_dataset/label-1/HRF*
+testing_dataset/pre-processed/HRF*
+training_dataset/pre-processed/HRF*

@@ -34,7 +34,7 @@ def data_generator(dataset_root_dir, image_dir, label_dir, image_ext, batch_size
     for file in files:
         img = np.asarray(Image.open(file))
         if preprocess:
-            img = pre_process_image(img, return_channel_last_img=True, gamma=1., multi_gamma_channel=True)
+            img = pre_process_image(img, return_channel_last_img=True, gamma=1., multi_gamma_channel=False)
             channels = img.shape[-1]
         lbl = np.asarray(Image.open(file.replace(image_dir, label_dir)))
         if np.max(img) > 1:
@@ -284,10 +284,10 @@ def main():
     patch_size = (256, 256)
     pbar = tqdm(total=total_batches * batch_size, desc='Progress')
     i = 0
-    RESULT_DIR = '../Corrected/val/patches'
+    RESULT_DIR = 'testing_dataset/patches'
     if not os.path.isdir(RESULT_DIR):
         os.mkdir(RESULT_DIR)
-    for data in data_generator('../Corrected/val', 'input', 'label', 'png', batch_size, patch_size, preprocess=True, data_aug=True):
+    for data in data_generator('testing_dataset', 'input', 'label-1', 'png', batch_size, patch_size, preprocess=True, data_aug=True):
         i = current_batch * batch_size
         for X, Y in zip(data[0], data[1]):
             if X.shape[2] == 1:

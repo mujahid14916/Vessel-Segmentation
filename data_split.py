@@ -34,7 +34,7 @@ os.mkdir(training_label_2_dir)
 os.mkdir(testing_label_1_dir)
 os.mkdir(testing_label_2_dir)
 
-TEST_SPLIT = 0.2
+TEST_SPLIT = 0.1
 MIN_TEST_SIZE = 5
 
 # CHASE DB
@@ -140,3 +140,34 @@ for i, file in enumerate(drive_files[-test_count:], k):
     # shutil.copy(drive_training_label_dir + image_name.replace('training', 'manual1') + '.gif', label_1_dir + '/DRIVE_{:02d}.gif'.format(i))
     label_1 = Image.open(drive_label_dir + image_name + '.gif')
     label_1.convert('L').save(testing_label_1_dir + '/DRIVE_{:02d}.png'.format(i))
+
+
+# HRF
+# ------------------------------------------------------------------------------------------------
+hrf_dir = 'Dataset/HRF/images/'
+hrf_label_dir = 'Dataset/HRF/manual1/'
+hrf_files = np.array(glob(hrf_dir + '*.jpg'))
+
+test_count = max(int(TEST_SPLIT * len(hrf_files)), MIN_TEST_SIZE)
+index = np.random.permutation(len(hrf_files))
+hrf_files = hrf_files[index]
+k = 1
+print("TRAINING DIR -----------------")
+for i, file in enumerate(hrf_files[:-test_count], k):
+    print(file)
+    image_name = ''.join(file.replace('\\', '/').split('/')[-1].split('.')[:-1])
+    Image.open(file).save(training_input_dir + '/HRF_{:02d}.png'.format(i))
+    # shutil.copy(file, training_input_dir + '/DRIVE_{:02d}.png'.format(i))
+    # shutil.copy(drive_training_label_dir + image_name.replace('training', 'manual1') + '.gif', label_1_dir + '/DRIVE_{:02d}.gif'.format(i))
+    label_1 = Image.open(hrf_label_dir + image_name + '.tif')
+    label_1.convert('L').save(training_label_1_dir + '/HRF_{:02d}.png'.format(i))
+    k += 1
+print("TESTING DIR -----------------")
+for i, file in enumerate(hrf_files[-test_count:], k):
+    print(file)
+    image_name = ''.join(file.replace('\\', '/').split('/')[-1].split('.')[:-1])
+    Image.open(file).save(testing_input_dir + '/HRF_{:02d}.png'.format(i))
+    # shutil.copy(file, testing_input_dir + '/DRIVE_{:02d}.png'.format(i))
+    # shutil.copy(drive_training_label_dir + image_name.replace('training', 'manual1') + '.gif', label_1_dir + '/DRIVE_{:02d}.gif'.format(i))
+    label_1 = Image.open(hrf_label_dir + image_name + '.tif')
+    label_1.convert('L').save(testing_label_1_dir + '/HRF_{:02d}.png'.format(i))
