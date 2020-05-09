@@ -8,7 +8,7 @@ image_size = (256, 256)
 Input_Shape = (*image_size, 3)
 batch_size = 16
 training_data_dir = 'dataset/training'
-RES_DIR = 'new_model_2'
+RES_DIR = 'new_model_3'
 if not os.path.isdir(RES_DIR):
     os.mkdir(RES_DIR)
 epochs = 800
@@ -52,47 +52,28 @@ for file in os_images:
 val_x = np.array(val_x)
 val_y = np.array(val_y)
 
-input_layer = tf.keras.layers.Input(Input_Shape)
 
-x = tf.keras.layers.Conv2D(filters=32, kernel_size=(3, 3), padding='same', activation='relu', kernel_initializer = 'he_normal')(input_layer)
-x = tf.keras.layers.BatchNormalization()(x)
-x = tf.keras.layers.Conv2D(filters=32, kernel_size=(3, 3), padding='same', activation='relu', kernel_initializer = 'he_normal')(x)
-x = tf.keras.layers.BatchNormalization()(x)
-x = tf.keras.layers.MaxPool2D(pool_size=(2, 2), padding='valid')(x)
-x = tf.keras.layers.Dropout(0.1)(x)
-x = tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding='same', activation='relu', kernel_initializer = 'he_normal')(x)
-x = tf.keras.layers.BatchNormalization()(x)
-x = tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding='same', activation='relu', kernel_initializer = 'he_normal')(x)
-x = tf.keras.layers.BatchNormalization()(x)
-x = tf.keras.layers.MaxPool2D(pool_size=(2, 2), padding='valid')(x)
-x = tf.keras.layers.Dropout(0.1)(x)
-x = tf.keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same', activation='relu', kernel_initializer = 'he_normal')(x)
-x = tf.keras.layers.BatchNormalization()(x)
-x = tf.keras.layers.MaxPool2D(pool_size=(2, 2), padding='valid')(x)
-x = tf.keras.layers.Dropout(0.1)(x)
-x = tf.keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation='relu', kernel_initializer = 'he_normal')(x)
-x = tf.keras.layers.BatchNormalization()(x)
-x = tf.keras.layers.MaxPool2D(pool_size=(2, 2), padding='valid')(x)
-x = tf.keras.layers.Dropout(0.1)(x)
+def block(inputs, filters, multi_conv=True):
+    l = tf.keras.layers.Conv2D(filters=filters, kernel_size=(3, 3), padding='same', activation='relu', kernel_initializer = 'he_normal')(inputs)
+    l = tf.keras.layers.BatchNormalization()(l)
+    if multi_conv:
+        l = tf.keras.layers.Conv2D(filters=filters, kernel_size=(3, 3), padding='same', activation='relu', kernel_initializer = 'he_normal')(l)
+        l = tf.keras.layers.BatchNormalization()(l)
+    l = tf.keras.layers.MaxPool2D(pool_size=(2, 2), padding='valid')(l)
+    return tf.keras.layers.Dropout(0.1)(l)
+
+input_layer = tf.keras.layers.Input(Input_Shape)
+x = block(input_layer, 32)
+x = block(x, 64)
+x = block(x, 128, multi_conv=False)
+x = block(x, 256, multi_conv=False)
 x = tf.keras.layers.Conv2D(filters=512, kernel_size=(1, 1), padding='same', activation='relu', kernel_initializer = 'he_normal')(x)
 x = tf.keras.layers.MaxPool2D(pool_size=(2, 2), padding='valid')(x)
-    # keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same', activation='elu'),
-    # keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same', activation='elu'),
-    # keras.layers.MaxPool2D(pool_size=(2, 2)),
-    # keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation='elu'),
-    # keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same', activation='elu'),
-    # keras.layers.MaxPool2D(pool_size=(2, 2)),
-    # keras.layers.MaxPool2D(pool_size=(2, 2)),
-    # keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same', activation='relu', kernel_initializer = 'he_normal'),
-    # keras.layers.MaxPool2D(pool_size=(2, 2), padding='same'),
 x = tf.keras.layers.Flatten()(x)
-    # keras.layers.Dropout(rate=0.5),
 x = tf.keras.layers.Dense(128, activation='relu')(x)
 x = tf.keras.layers.Dropout(rate=0.1)(x)
 output = tf.keras.layers.Dense(1, activation='sigmoid')(x)
 model = tf.keras.models.Model(inputs=input_layer, outputs=output)
-
-# model.load_weights('weights-1723-0.0019-0.9987-0.0436-0.9451.hdf5')
 
 model.summary()
 model.compile(

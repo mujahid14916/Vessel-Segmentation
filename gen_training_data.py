@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from glob import glob
 from PIL import Image
+import os
 
 
 def rgb2gray(rgb):
@@ -67,13 +68,15 @@ def read_training_images(files):
     for i, file in enumerate(files, 1):
         print("{}/{}: {}".format(i, len(files), file))
         image = Image.open(file)
-        images.append(np.asarray(image))
+        images.append(np.asarray(image)[:, :, :3])
     return images
 
 
 def main():
-    files = glob('training_dataset/input/*jpg')
-    result_dir = 'training_dataset/pre-processed/'
+    files = glob('../neo/*png')
+    result_dir = '../neo/pre-processed/'
+    if not os.path.isdir(result_dir):
+        os.mkdir(result_dir)
     images = read_training_images(files)
     for file, image in zip(files, images):
         image_name = ''.join(file.replace('\\', '/').split('/')[-1].split('.')[:-1])

@@ -173,7 +173,7 @@ def main():
     for i in tqdm(range(len(input_files)), desc="Processing Images"):
         file, image = input_files[i], images[i]
         image_name = ''.join(file.replace('\\', '/').split('/')[-1].split('.')[:-1])
-        out = np.array(pre_process_image(image, True, gamma=1., multi_gamma_channel=True), dtype=np.uint8)
+        out = np.array(pre_process_image(image, True, gamma=1., multi_gamma_channel=False), dtype=np.uint8)
         if out.shape[2] == 1:
             out = out[:, :, 0]
         # out = np.repeat(out, repeats=[3], axis=-1)
