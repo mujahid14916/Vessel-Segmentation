@@ -21,12 +21,13 @@ PATCH_SIZE = (256, 256)           # (height, width)
 STRIDE_SIZE = (128, 128)          # (height, width)
 IMG_SIZE = None
 
-DIR_NAME = '../neo'
-RESULT_DIR = DIR_NAME + '_caps_results_multi_channel_30'
-MODEL_PATH = 'models/segcaps-multi-channel-2-model-rop-25-0.110118-0.904971.hdf5'
+DIR_NAME = '../retcam'
+RESULT_DIR = DIR_NAME + '_caps_results_rop_2'
+# MODEL_PATH = 'models/segcaps-multi-channel-2-model-rop-25-0.110118-0.904971.hdf5'
+MODEL_PATH = 'models/segcaps-rop-2-model-30-0.057898-0.914384.hdf5'
 
 
-input_shape=(256, 256, 3)
+input_shape=(256, 256, 1)
 train_model, test_model, manip_model = CapsNetR3(input_shape)
 model = tf.keras.models.load_model(MODEL_PATH, 
                                     custom_objects={
@@ -66,16 +67,16 @@ def undo_rotate_image(image, deg=45, shape=None):
     return rotated_image[h:h+img_height, w:w+img_width]
 
 
-def segment_vessel_capsnet(image, th_value=150, max_image_size=640, rescale=False):
+def get_vessel_map(image, th_value=150, max_image_size=MAX_IMG_SIZE, rescale=True, rotated_image=False):
     img = np.copy(image)
     if np.max(img) > 1:
         img = np.array(img/255., dtype=np.float)
     # TODO: Better scaling metrics
-    if rescale:
+    if not rotated_image and rescale:
         img = rescale_image(img, max_image_size)
-    img = img[:, :, 0:3]
+    img = img[:, :, :3]
     img_size = img.shape[:2]
-    img = pre_process_image(img, gamma=1.0, multi_gamma_channel=True)
+    img = pre_process_image(img, gamma=1.0, multi_gamma_channel=False)
 
     #extend both images and masks so they can be divided exactly by the patches dimensions
     img = paint_border_overlap(img, *PATCH_SIZE, *STRIDE_SIZE, verbose=False)
@@ -91,7 +92,7 @@ def segment_vessel_capsnet(image, th_value=150, max_image_size=640, rescale=Fals
     original_image = np.einsum('klij->kijl', original_image)
     original_image = original_image[0, 0:img_size[0], 0:img_size[1], :]
     rgb_image = np.repeat(original_image, 3, axis=-1)
-    threshold = cv2.threshold(rgb_image, th_value/255, 255/255, cv2.THRESH_BINARY)[1]
+    threshold = cv2.threshold(rgb_image, th_value/255, 255/255, cv2.THRESH_BINARY)[1][:, :, :1]
     
     return original_image, threshold
 
@@ -109,6 +110,71 @@ def rescale_image(image, max_image_size=640):
     return tf.image.resize(image, img_size)
 
 
+def segment_vessel_capsnet(img, th_value=150, max_image_size=MAX_IMG_SIZE, rescale=True, img_transform=False):
+    image = np.asarray(img)
+    if rescale:
+        image = rescale_image(image, max_image_size=max_image_size)
+    (h, w) = image.shape[:2]
+    img, th = get_vessel_map(image, th_value=th_value, max_image_size=max_image_size, rescale=rescale)
+    res = np.array(img, dtype=np.float64)
+    res_th = np.array(th, dtype=np.float64)
+    if img_transform:
+
+        # Vertical Flip
+        img, th = get_vessel_map(image[:, ::-1, ...], th_value=th_value, max_image_size=max_image_size, rescale=rescale)
+        res += img[:, ::-1, ...]
+        res_th += th[:, ::-1, ...]
+
+        # Vertical Flip
+        img, th = get_vessel_map(image[::-1, :, ...], th_value=th_value, max_image_size=max_image_size, rescale=rescale)
+        res += img[::-1, :, ...]
+        res_th += th[::-1, :, ...]
+
+        # Horizontal & Vertical Flip
+        img, th = get_vessel_map(image[::-1, ::-1, ...], th_value=th_value, max_image_size=max_image_size, rescale=rescale)
+        res += img[::-1, ::-1, ...]
+        res_th += th[::-1, ::-1, ...]
+
+        # Rotate by 30 deg
+        deg = 30
+        img, th = get_vessel_map(rotate_image(image, deg=deg), th_value=th_value, max_image_size=max_image_size, rescale=rescale, rotated_image=True)
+        r = undo_rotate_image(img, deg=deg, shape=(h, w))
+        r[r > 1] = 1
+        r[r < 0] = 0
+        t = undo_rotate_image(th, deg=deg, shape=(h, w))
+        t[t > 1] = 1
+        t[t < 0] = 0
+        res += r
+        res_th += t
+
+        # Rotate by 45 deg
+        deg = 45
+        img, th = get_vessel_map(rotate_image(image, deg=deg), th_value=th_value, max_image_size=max_image_size, rescale=rescale, rotated_image=True)
+        r = undo_rotate_image(img, deg=deg, shape=(h, w))
+        r[r > 1] = 1
+        r[r < 0] = 0
+        t = undo_rotate_image(th, deg=deg, shape=(h, w))
+        t[t > 1] = 1
+        t[t < 0] = 0
+        res += r
+        res_th += t
+
+        # Rotate by 60 deg
+        deg = 60
+        img, th = get_vessel_map(rotate_image(image, deg=deg), th_value=th_value, max_image_size=max_image_size, rescale=rescale, rotated_image=True)
+        r = undo_rotate_image(img, deg=deg, shape=(h, w))
+        r[r > 1] = 1
+        r[r < 0] = 0
+        t = undo_rotate_image(th, deg=deg, shape=(h, w))
+        t[t > 1] = 1
+        t[t < 0] = 0
+        res += r
+        res_th += t
+    res = np.array(np.clip(res*255, 0, 255), dtype=np.uint8)
+    res_th = np.array(np.clip(res_th*255, 0, 255), dtype=np.uint8)
+    return res, res_th
+
+
 def main():
     files = glob(DIR_NAME + '/*.png')
     if not os.path.isdir(RESULT_DIR):
@@ -117,8 +183,8 @@ def main():
         image = tf.keras.preprocessing.image.load_img(file)
         image = np.asarray(image)
         image = rescale_image(image, max_image_size=MAX_IMG_SIZE)
-        img, th = segment_vessel_capsnet(image, 150)
-        (h, w) = img.shape[:2]
+        (h, w) = image.shape[:2]
+        img, th = get_vessel_map(image, 150)
         res = np.array(img, dtype=np.float64)
         res_th = np.array(th, dtype=np.float64)
         image_name = ''.join(file.replace('\\', '/').split('/')[-1].split('.')[:-1])
@@ -126,21 +192,21 @@ def main():
         tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-th.jpg'), th)
         
     # print("Horizontal Flip")
-        img, th = segment_vessel_capsnet(image[:, ::-1, ...], 150)
+        img, th = get_vessel_map(image[:, ::-1, ...], 150)
         res += img[:, ::-1, ...]
         res_th += th[:, ::-1, ...]
         # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-h.jpg'), img[:, ::-1, ...])
         tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-h-th.jpg'), th[:, ::-1, ...])
     
     # print("Vertical Flip")
-        img, th = segment_vessel_capsnet(image[::-1, :, ...], 150)
+        img, th = get_vessel_map(image[::-1, :, ...], 150)
         res += img[::-1, :, ...]
         res_th += th[::-1, :, ...]
         # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-v.jpg'), img[::-1, :, ...])
         tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-v-th.jpg'), th[::-1, :, ...])
     
     # print("Horizontal & Vertical Flip")
-        img, th = segment_vessel_capsnet(image[::-1, ::-1, ...], 150)
+        img, th = get_vessel_map(image[::-1, ::-1, ...], 150)
         res += img[::-1, ::-1, ...]
         res_th += th[::-1, ::-1, ...]
         # tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-hv.jpg'), img[::-1, ::-1, ...])
@@ -148,7 +214,7 @@ def main():
         
     # print("Rotate by 30 deg")
         deg = 30
-        img, th = segment_vessel_capsnet(rotate_image(image, deg=deg), 150)
+        img, th = get_vessel_map(rotate_image(image, deg=deg), 150, rotated_image=True)
         r = undo_rotate_image(img, deg=deg, shape=(h, w))
         r[r > 1] = 1
         r[r < 0] = 0
@@ -162,7 +228,7 @@ def main():
         
     # print("Rotate by 45 deg")
         deg = 45
-        img, th = segment_vessel_capsnet(rotate_image(image, deg=deg), 150)
+        img, th = get_vessel_map(rotate_image(image, deg=deg), 150, rotated_image=True)
         r = undo_rotate_image(img, deg=deg, shape=(h, w))
         r[r > 1] = 1
         r[r < 0] = 0
@@ -176,7 +242,7 @@ def main():
         
     # print("Rotate by 60 deg")
         deg = 60
-        img, th = segment_vessel_capsnet(rotate_image(image, deg=deg), 150)
+        img, th = get_vessel_map(rotate_image(image, deg=deg), 150, rotated_image=True)
         r = undo_rotate_image(img, deg=deg, shape=(h, w))
         r[r > 1] = 1
         r[r < 0] = 0
@@ -192,6 +258,7 @@ def main():
         res_th = np.array(np.clip(res_th*255, 0, 255), dtype=np.uint8)
         tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-combined.jpg'), res)
         tf.keras.preprocessing.image.save_img(os.path.join(RESULT_DIR, image_name + 'xxx-combined-th.jpg'), res_th)
+        exit()
 
 if __name__ == '__main__':
     main()
